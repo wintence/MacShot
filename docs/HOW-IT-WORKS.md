@@ -1,190 +1,194 @@
-# Как это устроено
+# How it works
 
-Технические подробности, которые не место на главной странице.
+Technical details that do not belong on the front page.
 
-## Состав кода
+## Layout of the code
 
 ```
-App.xaml.cs                 разбор ключей, запуск, защита от второго экземпляра
+App.xaml.cs                 argument parsing, startup, single-instance guard
 Interop/Native.cs           P/Invoke
-Interop/DibSurface.cs       DIB-буфер GDI
-Capture/WindowFinder.cs     поиск окна под курсором и его границы
-Capture/WindowCapturer.cs   PrintWindow с таймаутом, резерв — BitBlt
-Capture/PixelTransfer.cs    обмен пикселями GDI <-> WPF
-Render/CornerRounder.cs     скругление углов
-Render/ShotRenderer.cs      сборка: фон + окно + тень
-Services/                   горячая клавиша, буфер, трей, автозапуск, журнал
-UI/                         оверлей выбора, настройки, палитра, диалог клавиши
-Lang/                       переводы интерфейса
-Settings/                   модель настроек и разбор цвета
+Interop/DibSurface.cs       GDI DIB surface
+Capture/WindowFinder.cs     window under the cursor and its bounds
+Capture/WindowCapturer.cs   PrintWindow with a timeout, BitBlt as fallback
+Capture/PixelTransfer.cs    pixel transfer between GDI and WPF
+Render/CornerRounder.cs     corner rounding
+Render/ShotRenderer.cs      composition: background + window + shadow
+Services/                   hotkey, clipboard, tray, autostart, logging
+UI/                         picker overlay, settings, palette, hotkey dialog
+Lang/                       interface translations
+Settings/                   settings model and color parsing
 ```
 
-## Захват
+## Capture
 
-Сначала `PrintWindow` с флагом `PW_RENDERFULLCONTENT` — он рисует окно в
-переданный буфер и не зависит от того, перекрыто ли окно другими.
+`PrintWindow` with `PW_RENDERFULLCONTENT` comes first — it draws the window into
+the supplied buffer and does not care whether the window is covered.
 
-На окнах DirectComposition (Chromium, Electron, часть игр) `PrintWindow` уходит
-в бесконечное ожидание — проверено на практике, процесс зависал на минуты.
-Поэтому вызов идёт в отдельном потоке с таймаутом в 2 секунды, а если окно не
-ответило — capture переходит на `BitBlt` с экрана.
+On DirectComposition windows (Chromium, Electron, some games) `PrintWindow`
+blocks forever — verified in practice, the process hung for minutes. So the call
+runs on a worker thread with a 2 second timeout, and if the window does not
+answer, capture falls back to `BitBlt` from the screen.
 
-**Геометрия.** Печатается всё окно целиком, по границам `GetWindowRect`, а
-потом кадр обрезается до видимых границ DWM. Если сразу рисовать в буфер
-размером с видимую область, содержимое смещается на ширину невидимой рамки:
-слева появляется полоса, справа кадр обрезается.
+**Geometry.** The whole window is printed at `GetWindowRect` size, then the frame
+is cropped down to the visible DWM bounds. Drawing straight into a buffer sized
+to the visible area shifts the content by the width of the invisible border: a
+strip shows up on the left and the right side gets cut off.
 
-## Пиксели
+## Pixels
 
-`WriteableBitmap` в .NET 8 не отдаёт указатель на свой буфер — писать в него
-можно только через `WritePixels`. Причём третий параметр там — **шаг строки**,
-а не размер буфера; если передать размер всего буфера, WPF посчитает
-`шаг * высота` и получит переполнение `int`.
+In .NET 8 `WriteableBitmap` no longer exposes its back buffer pointer — the only
+way to write into it is `WritePixels`. Its third argument is the **row stride**,
+not the buffer size; pass the buffer size and WPF computes `stride * height`,
+which overflows `int`.
 
-Писать в `WriteableBitmap` можно только из потока диспетчера. Рабочий поток
-`PrintWindow` поэтому отдаёт только сырой `byte[]`, а перенос в WPF делает
-основной поток.
+`WriteableBitmap` may only be written from the dispatcher thread. The
+`PrintWindow` worker therefore returns a plain `byte[]` and the transfer into
+WPF happens on the main thread.
 
-## Повторный захват
+## Repeat captures
 
-Оверлей выбора — одно окно на весь сеанс работы. Таймер опроса запускается
-из `Begin()` через `Dispatcher.BeginInvoke`, а не из `OnContentRendered`:
-тот срабатывает только при самом первом показе. Со второго раза оверлей
-появлялся, но не реагировал ни на клик, ни на `Esc`.
+The picker overlay is a single window reused for the whole session. Its polling
+timer is started from `Begin()` via `Dispatcher.BeginInvoke`, not from
+`OnContentRendered` — that event fires only on the very first show. From the
+second time on, the overlay appeared but ignored both clicks and `Esc`.
 
-## Оверлей
+## Overlay
 
-Окно выбора сделано прозрачным (`WS_EX_TRANSPARENT`) и опрашивает мышь через
-`GetCursorPos` / `GetAsyncKeyState`, а не через события WPF. При альфа = 0 WPF
-не получает события мыши вовсе: событие нужно, чтобы нарисовать подсветку, а
-подсветка нужна, чтобы событие пришло.
+The picker window is transparent (`WS_EX_TRANSPARENT`) and polls the mouse via
+`GetCursorPos` / `GetAsyncKeyState` instead of relying on WPF events. At alpha 0
+WPF receives no mouse input at all: the event is needed to draw the highlight,
+and the highlight is needed for the event to arrive.
 
-## Отрисовка
+## Rendering
 
-Кадр собирается в `RenderTargetBitmap`: фон, поверх окно со скруглением и
-тень через `DropShadowEffect`.
+The frame is composed in a `RenderTargetBitmap`: background, then the window
+with rounded corners and a shadow from `DropShadowEffect`.
 
-Цвет тени выбирается по воспринимаемой светлоте фона (формула Rec. 709).
-На тёмном фоне чёрная тень не читается и окно приклеивается к подложке,
-поэтому там тень становится белой; на светлом — чёрной.
+Shadow color follows the perceived lightness of the background (Rec. 709). On a
+dark background a black shadow is invisible and the window looks glued down, so
+there the shadow turns white; on a light background it stays black.
 
-Направление `Direction` в WPF задаётся неочевидно: **270 — вниз, 90 — вверх**.
-При 90 тень уходила вверх (яркость над окном падала с 237 до 144, под окном
-оставалась 230 — тени не было). Замеры сделаны по всем четырём сторонам.
+`Direction` in WPF is set in a way that is easy to get wrong: **270 is down, 90
+is up**. At 90 the shadow went upward — brightness above the window dropped from
+237 to 144 while below it stayed at 230, meaning no shadow at all. Measured on
+all four sides.
 
-Направление градиента задаётся положением концов оси, а не поворотом кисти.
-`RotateTransform` на `LinearGradientBrush` уводил ось за пределы фигуры, а у
-кисти стоит `WrapMode.Tile`, и заливка начинала повторяться плиткой: при угле
-90° фон был просто залит начальным цветом.
+Gradient direction is computed from the endpoints of the axis rather than by
+rotating the brush. `RotateTransform` on a `LinearGradientBrush` pushes the axis
+outside the shape, and the brush defaults to `WrapMode.Tile`, so the fill
+started repeating: at 90° the background was simply flooded with the first
+color.
 
-## Горячая клавиша
+## Hotkey
 
-Флаг `MOD_NOREPEAT` не используется: на проверенной машине с ним Windows считал
-`Ctrl+Alt+F12` занятым, тогда как без него та же регистрация проходила.
+`MOD_NOREPEAT` is not used: on the test machine Windows reported `Ctrl+Alt+F12`
+as already taken with that flag, while the same registration succeeded without
+it.
 
-Два окна не могут принадлежать друг другу, пока не показаны. Поэтому
-`HotKeyDialog.Owner` назначается в `OnSourceInitialized`, а не в конструкторе
-`SettingsWindow`: пока окно настроек не получило дескриптор, WPF бросает
+Two windows cannot own each other until they are shown. That is why
+`HotKeyDialog.Owner` is assigned in `OnSourceInitialized` rather than in the
+`SettingsWindow` constructor — until the settings window has a handle, WPF throws
 `InvalidOperationException`.
 
-Одно окно WPF можно показать через `ShowDialog()` ровно один раз, поэтому
-диалог горячей клавиши создаётся заново на каждый вызов.
+A WPF window may be shown with `ShowDialog()` exactly once, so the hotkey
+dialog is created fresh on every call.
 
-## Настройки
+## Settings
 
-Цвета пишутся в настройки из полей ввода по событию `TextChanged` — без
-обработчика предпросмотр читал прямо из полей, а сохранялись старые значения,
-и цвет возвращался при выходе из окна.
+Colors are written into the settings from the input fields on `TextChanged`.
+Without that handler the preview read the fields directly while the old values
+were persisted, and the color reverted when the window closed.
 
-Смена языка пересоздаёт окно: строки разметки читаются через `x:Static` при
-разборе XAML, обновить их на лету нельзя.
+Changing the language recreates the window: strings in markup are read through
+`x:Static` at XAML parse time and cannot be refreshed in place.
 
-Переводы лежат в `Lang/I18n.cs` обычным словарём, а не в `.resx`: строк
-немного, а из XAML всё равно пришлось бы тянуть их через `x:Static`. Класс
-назван `I18n`, а не `Localization`, потому что `System.Windows.Localization`
-существует тоже и конфликтует по имени. Словарь перестанет справляться, когда
-языков станет больше десятка или понадобятся формы множественного числа.
+Translations live in `Lang/I18n.cs` as a plain dictionary rather than in
+`.resx`: there are few strings, and XAML would need `x:Static` either way. The
+class is named `I18n` rather than `Localization` because
+`System.Windows.Localization` exists as well and collides by name. The dictionary
+will stop being enough past roughly ten languages, or as soon as plural forms
+are needed.
 
-## Значки
+## Icons
 
-Два файла: `Resources/MacShotIconNew.ico` для приложения и
-`Resources/MacShotTray.ico` для трея. Рисуются из одного скрипта и отличаются
-только толщиной элементов (0.100 против 0.135 от размера): в трее значок живёт
-16–24 px, и при обычной толщине скобки сливаются в пятно.
+Two files: `Resources/MacShotIconNew.ico` for the application and
+`Resources/MacShotTray.ico` for the tray. Both are drawn by the same script and
+differ only in element thickness (0.100 versus 0.135 of the size): the tray icon
+lives at 16–24 px, and at normal thickness the brackets merge into a blob.
 
-Записи в `.ico` пишутся в формате **DIB** (`BITMAPINFOHEADER` + BGRA +
-AND-маска), а не PNG. Windows Vista+ умеет PNG внутри `.ico`, но
-`System.Drawing.Icon` из .NET Framework и .NET 8 такой формат не читает:
-`Icon.ToBitmap()` возвращает мусор. Трей работает именно через
-`System.Drawing.Icon`, поэтому PNG-записи там ломали бы значок. Только размер
-256 оставлен PNG — DIB на пол мегабайта, а `Icon` всё равно такой размер не
-запрашивает.
+Entries in the `.ico` are written as **DIB** (`BITMAPINFOHEADER` + BGRA + AND
+mask), not PNG. Windows Vista and later understand PNG inside `.ico`, but
+`System.Drawing.Icon` in .NET Framework and .NET 8 does not — `Icon.ToBitmap()`
+returns garbage. The tray goes through `System.Drawing.Icon` exactly, so PNG
+entries would break the icon there. Only the 256 size is left as PNG, because a
+DIB of that size runs to half a megabyte and `Icon` never asks for it anyway.
 
-При сборке AND-маски номер байта считается через `Floor`, а не через `[int]`:
-PowerShell округляет 7.875 до 8, и при размере 64 индекс уезжал ровно за
-конец массива.
+When building the AND mask the byte number is computed with `Floor`, not
+`[int]`: PowerShell rounds 7.875 to 8, and at size 64 the index lands exactly one
+past the end of the array.
 
-## Почему файл весит 64 МБ
+## Why the full file is 64 MB
 
-Сама программа — примерно 800 КБ. Остальное — среда выполнения .NET,
-упакованная внутрь, чтобы приложение запускалось на любой машине без
-установки чего-либо.
+The program itself is about 800 KB. The rest is the .NET runtime, bundled in so
+the application runs on any machine with nothing installed.
 
-| Состав | Примерно |
+| Component | Roughly |
 |---|---|
-| .NET 8, WPF, Windows Forms | ~62 МБ |
-| Сжатие | отнимает примерно вдвое |
-| Программа и иконки | ~1 МБ |
+| .NET 8, WPF, Windows Forms | ~62 MB |
+| Compression | takes roughly half off |
+| Program and icons | ~1 MB |
 
-Сжатие уже включено в сборку. Уменьшить файл сильнее нельзя:
+Compression is already enabled. The file cannot be made much smaller:
 
-- **`PublishTrimmed` к WPF неприменимо.** Обрезка не знает про рефлексию XAML
-  и про то, какие конструкторы вызывает разметка. Окна продолжают открываться,
-  но падают при первом обращении к типу из разметки — то есть в самый
-  неподходящий момент.
-- **`PublishReadyToRun` наоборот увеличивает** файл: он заранее компилирует IL
-  в машинный код ради быстрого старта.
-- **Языковые пакеты** отброшены, кроме русского.
+- **`PublishTrimmed` does not apply to WPF.** Trimming knows nothing about XAML
+  reflection or which constructors the markup invokes. Windows still open, then
+  fall over the first time markup touches a type — which is the worst possible
+  moment.
+- **`PublishReadyToRun` makes the file bigger**, not smaller: it precompiles IL
+  to machine code for faster startup.
+- **Language packs** are dropped except Russian.
 
-Чтобы получить файл в 20 раз меньше, нужно отказаться от автономности и
-поставить на машину .NET 8 Desktop Runtime. Такая сборка весит около 0,8 МБ, но
-требует отдельного шага установки, а на чистой Windows без интернета её
-поставить нечем.
+To get a file 20 times smaller, give up self-containment and install the .NET 8
+Desktop Runtime on the machine. That build is about 0.8 MB, but it needs an extra
+install step, and on a clean Windows without internet there is nothing to
+install it from.
 
 ```powershell
-# автономная, ~64 МБ
+# self-contained, ~64 MB
 dotnet publish -c Release -r win-x64 --self-contained true `
   -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
   -p:EnableCompressionInSingleFile=true -p:SatelliteResourceLanguages=ru `
   -o release-full
 
-# компактная, ~0,8 МБ
+# compact, ~0.8 MB
 dotnet publish -c Release -r win-x64 --self-contained false `
   -p:PublishSingleFile=true -p:SatelliteResourceLanguages=ru `
   -o release
 ```
 
-## Известные ограничения
+## Known limitations
 
-- Захват идёт в логическом масштабе окна (`GetDpiForWindow` → `GetScale`).
-  На смешанном DPI снимок может отличаться от того, что видно на экране.
-- При таймауте `PrintWindow` рабочий поток остаётся висеть вместе с буфером
-  GDI; освобождается при выходе из процесса.
-- Перекрытые окна снимаются через `PrintWindow`. Если приложение не отдаёт
-  содержимое (защищённый DRM-контент), кадр получится пустым.
-- При смешанном фоне (тёмный градиент в светлый) тень берётся по более тёмному
-  краю.
+- Capture runs at the logical scale of the window (`GetDpiForWindow` →
+  `GetScale`). On a mixed-DPI setup the result may differ from what is on screen.
+- When `PrintWindow` times out, the worker thread stays stuck along with its GDI
+  buffer. It is released when the process exits.
+- Covered windows are captured through `PrintWindow`. If an application refuses
+  to hand over its content (protected DRM material), the frame comes out empty.
+- On a mixed background (a gradient from dark to light) the shadow is chosen
+  from the darker edge.
 
-## Что проверено на живой машине
+## Verified on a live machine
 
-- захват через `PrintWindow`, три снимка подряд в одном процессе
-- оформление: скругление, тень снизу, градиент — замерами яркости
-- автоцвет тени: на тёмном фоне под окном 112 при фоне 29, на светлом 150 при
-  фоне 237
-- отступ: 10 → 1174×969, 40 → 1234×1029, 80 → 1314×1109
-- полный цикл: клик по окну → снимок в буфере (картинка извлечена обратно)
-- доставка `WM_HOTKEY` по живому нажатию
-- переключение языка в обе стороны и сохранение выбора
+- capture through `PrintWindow`, three shots in a row in the same process
+- styling: rounded corners, shadow below, gradient — measured by pixel brightness
+- automatic shadow color: on a dark background 112 below the window against a
+  background of 29; on a light one 150 against 237
+- padding: 10 → 1174×969, 40 → 1234×1029, 80 → 1314×1109
+- full cycle: click a window → screenshot in the clipboard (the image was read
+  back out)
+- `WM_HOTKEY` delivery on a real key press
+- language switching in both directions, with the choice persisted
 
-Автоматически воспроизвести нажатие клавиш нельзя: `SendInput` и `keybd_event`
-не будят горячие клавиши ни в этом приложении, ни в стороннем пробнике.
+Key presses cannot be reproduced automatically: neither `SendInput` nor
+`keybd_event` wakes a global hotkey, in this application or in a third-party
+probe.

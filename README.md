@@ -1,74 +1,57 @@
 # MacShot
 
-Скриншоты окон в стиле macOS для Windows.
-
-Окно снимается без системной тени, обрамляется мягкой тенью и скруглёнными
-углами, кладётся на фон — и сразу попадает в буфер обмена.
-
-Это не скриншот экрана, а именно окна: в кадр не попадают ни курсор, ни другие
-окна, ни то, что находится за окном.
+Window screenshots in the macOS style for Windows.
 
 ![Windows](https://img.shields.io/badge/Windows-10%20|%2011-blue) ![.NET](https://img.shields.io/badge/.NET-8-purple) ![License](https://img.shields.io/badge/license-MIT-green)
 
-## Что делает
+## Settings
 
-- **Снимает выбранное окно** — без перекрытий и без системной тени Windows
-- **Выбирает окно курсором** — экран затемняется, окно под курсором подсвечивается, клик снимает
-- **Копирует в буфер обмена** — сразу, без диалогов сохранения
-- **Одевает снимок в рамку** — скруглённые углы, мягкая тень, фон
-- **Живёт в трее** — не занимает место на панели задач, запускается горячей клавишей
-
-Внешних зависимостей нет: только WPF и Win32.
-
-## Настройки
-
-| Параметр | По умолчанию |
+| Option | Default |
 |---|---|
-| Фон | градиент из двух цветов под углом |
-| Отступ | 40 |
-| Тень | включена: размытие 36, сдвиг вниз 16, плотность 0.45 |
-| Цвет фона | палитра из 29 свотчей и системный диалог |
-| Горячая клавиша | `Ctrl+Shift+8` |
-| Язык | русский или английский |
-| Сохранять копию в «Изображения» | выключено |
-| Запускать при входе в Windows | выключено |
+| Background | two-color gradient at an angle |
+| Padding | 40 |
+| Shadow | on: blur 36, offset down 16, density 0.45 |
+| Background color | palette of 29 swatches plus the system color dialog |
+| Hotkey | `Ctrl+Shift+8` |
+| Language | Russian or English |
+| Save a copy to Pictures | off |
+| Start when I sign in to Windows | off |
 
-Что стоит знать:
+Worth knowing:
 
-- **Тень подстраивается сама.** На тёмном фоне она светлая, на светлом — тёмная. Иначе окно либо приклеивается к подложке, либо тонуло в ней.
-- **Скругление не настраивается** — радиус фиксирован, как в macOS.
-- **Отступ — это ровно заданное значение.** При маленьком отступе тень обрезается краем кадра.
+- **The shadow adapts on its own.** On a dark background it turns light, on a light one it turns dark. Otherwise the window either sticks to the backdrop or disappears into it.
+- **Corner radius is not configurable** — it is fixed, like on macOS.
+- **Padding is exactly what you set.** At small values the shadow gets cut off by the frame edge.
 
-## Установка
+## Installation
 
-Скачайте из [Releases](https://github.com/wintence/MacShot/releases), запустите двойным кликом. Установка не нужна.
+Download from [Releases](https://github.com/wintence/MacShot/releases) and run it with a double click. Nothing to install.
 
-| Файл | Размер | Что нужно |
+| File | Size | Requires |
 |---|---|---|
-| `MacShot-full.exe` | 64 МБ | ничего, .NET внутри |
-| `MacShot-lite.exe` | 0,8 МБ | [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0) |
+| `MacShot-full.exe` | 64 MB | nothing, .NET is inside |
+| `MacShot-lite.exe` | 0.8 MB | [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0) |
 
-Полный файл большой почти целиком из-за встроенного .NET — самой программы
-в нём около 800 КБ. Подробности в [docs/HOW-IT-WORKS.md](docs/HOW-IT-WORKS.md).
+The full file is large almost entirely because of the bundled .NET — the program itself is about 800 KB. Details in [docs/HOW-IT-WORKS.md](docs/HOW-IT-WORKS.md).
 
-## Как пользоваться
+## Usage
 
-1. Нажмите горячую клавишу — по умолчанию `Ctrl+Shift+8`.
-2. Экран затемнится, окно под курсором подсветится.
-3. Кликните по нужному окну — снимок окажется в буфере обмена.
-4. `Esc` — отмена.
+1. Press the hotkey — `Ctrl+Shift+8` by default.
+2. The screen dims and the window under the cursor is highlighted.
+3. Click the window you want — the screenshot goes to the clipboard.
+4. `Esc` cancels.
 
-Правый клик по значку в трее: **Снять окно**, **Настройки**, **Выход**.
+Right-click the tray icon: **Capture window**, **Settings**, **Exit**.
 
-## Где лежат файлы
+## Where files live
 
-| Что | Путь |
+| What | Path |
 |---|---|
-| Настройки | `%AppData%\MacShot\settings.json` |
-| Журнал | `%AppData%\MacShot\MacShot.log` |
-| Снимки | `%Pictures%\MacShot` |
+| Settings | `%AppData%\MacShot\settings.json` |
+| Log | `%AppData%\MacShot\MacShot.log` |
+| Screenshots | `%Pictures%\MacShot` |
 
-## Сборка из исходников
+## Building from source
 
 ```powershell
 git clone https://github.com/wintence/MacShot.git
@@ -77,8 +60,8 @@ dotnet build
 dotnet run
 ```
 
-Нужна .NET 8 SDK.
+Requires the .NET 8 SDK.
 
-## Лицензия
+## License
 
-MIT — см. [LICENSE](LICENSE).
+MIT — see [LICENSE](LICENSE).
