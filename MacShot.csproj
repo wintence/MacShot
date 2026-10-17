@@ -1,0 +1,41 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <!-- Глобальные using'и описаны в GlobalUsings.cs: implicit-версия конфликтует
+         с System.Drawing из-за NotifyIcon -->
+    <ImplicitUsings>disable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <!-- Нужен только для System.Windows.Forms.NotifyIcon -->
+    <UseWindowsForms>true</UseWindowsForms>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>MacShot</AssemblyName>
+    <RootNamespace>MacShot</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+
+    <!-- Значок приложения. Встраивается в .exe: виден в проводнике,
+         на панели задач и в заголовках окон. -->
+    <ApplicationIcon>Resources\MacShotIconNew.ico</ApplicationIcon>
+
+    <!-- WFAC010 просит убрать DPI-параметры из манифеста и звать
+         Application.SetHighDpiMode. Это совет для WinForms-приложений.
+         У нас WPF: осведомлённость о DPI задаётся манифестом (PerMonitorV2),
+         иначе WPF масштабирует окно сам и координаты курсора разойдутся с
+         клиентскими. Вызвать SetHighDpiMode из WPF и нельзя. -->
+    <NoWarn>$(NoWarn);WFAC010</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Значок приложения нужен дважды: как ApplicationIcon выше (для .exe)
+         и как ресурс сборки (для заголовков окон через Icon). -->
+    <Resource Include="Resources\MacShotIconNew.ico" />
+
+    <!-- Значок трея — отдельный: в трее живёт 16-24 px, поэтому элементы
+         в нём толще, чем в значке приложения. -->
+    <Resource Include="Resources\MacShotTray.ico" />
+  </ItemGroup>
+
+</Project>

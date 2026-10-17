@@ -1,0 +1,24 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+*.userprefs
+
+## Сборки
+release/
+release-full/
+
+## IDE
+.vs/
+.vscode/
+.idea/
+*.swp
+
+## Система
+Thumbs.db
+desktop.ini
+.DS_Store
+
+## Журналы и снимки
+*.log
