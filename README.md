@@ -14,6 +14,20 @@ By default the height is **detected from the window geometry**: exactly the syst
 
 Switch to **Set manually** if the app does draw its own bar on top and you want it gone. The preview on the left clips its mock with the same numbers the real render uses, so it cannot show something different from the actual screenshot.
 
+### A height per application
+
+One global number cannot suit everyone: one app may draw a tall bar of its own, the next has a standard caption, and the third has nothing at all. **Height per application** solves that.
+
+An app is identified by the path to its `.exe`.
+
+**The easiest way — let it add itself.** Turn on **Hide the window title bar**, take a screenshot of the app you care about, and a row appears for it carrying the height that was actually used. Drag the slider to change it, or remove the row to fall back to the global mode. A per-app value wins over both the automatic detection and the manual setting.
+
+**Adding one in advance.** Press **Add application** and pick the `.exe`.
+
+**If you do not know where it lives** — open Task Manager, find the process, right-click it and choose **Open file location**. That opens the folder with the executable selected; copy the path from the address bar, or drag the `.exe` onto the file picker.
+
+Shortcuts are not accepted: a `.lnk` has its own path, which would never match the real window.
+
 ## Watermarks
 
 Add a signature, a logo, or both — as many as you like. Everything is drawn onto the finished frame, so the result is a single flat PNG.
@@ -33,7 +47,7 @@ Add a signature, a logo, or both — as many as you like. Everything is drawn on
 | Shadow | on: blur 36, offset down 16, density 0.45 |
 | Background color | palette of 29 swatches plus the system color dialog |
 | Watermark | off |
-| Hide the window title bar | off, height detected from the window |
+| Hide the window title bar | off, height detected per window, overridable per app |
 | Hotkey | `Ctrl+Shift+8` |
 | Language | English or Russian |
 | Save a copy to Pictures | off |

@@ -101,6 +101,8 @@ internal sealed class CaptureController : IDisposable
 
         LastShot = shot;
 
+        RememberAppTitleBar(_settings, window.Handle, scale);
+
         bool copied = ClipboardService.TrySetImage(shot);
 
         string savedPath = string.Empty;
@@ -111,6 +113,33 @@ internal sealed class CaptureController : IDisposable
         }
 
         BuildStatus(window.Title, capture.Method, copied, savedPath);
+    }
+
+    /// <summary>
+    /// Запоминает приложение, чтобы его можно было настроить отдельно.
+    ///
+    /// Запись появляется сама после первого снимка этого окна и сразу с той
+    /// высотой, которая на самом деле применилась. Иначе список в настройках
+    /// был бы пустым, и настраивать было бы нечего — выбирать приложения
+    /// вручную нечем.
+    ///
+    /// Существующую запись не трогаем: её уже могли отредактировать, и
+    /// переписывать каждым снимком значило бы забывать правку.
+    /// </summary>
+    public static void RememberAppTitleBar(AppSettings settings, IntPtr hwnd, double scale)
+    {
+        if (!settings.HideTitleBar)
+            return;
+
+        string app = Native.GetAppPath(hwnd);
+
+        if (string.IsNullOrEmpty(app) || settings.TitleBarOverrides.ContainsKey(app))
+            return;
+
+        settings.TitleBarOverrides[app] =
+            Render.ShotRenderer.MeasureTitleBar(settings, scale, hwnd);
+
+        SettingsStore.Save(settings);
     }
 
     private string BuildStatus(string title, CaptureMethod method, bool copied, string savedPath)

@@ -84,6 +84,8 @@ public partial class SettingsWindow : Window
         TitleAuto.IsChecked = _settings.TitleBarMode == TitleBarMode.Auto;
         TitleManual.IsChecked = _settings.TitleBarMode == TitleBarMode.Manual;
 
+        RebuildAppOverrides();
+
         SaveCheck.IsChecked = _settings.SaveToDisk;
         StartupCheck.IsChecked = _settings.RunAtStartup;
 
@@ -159,6 +161,7 @@ public partial class SettingsWindow : Window
         TitleBarSlider.IsEnabled = manual;
         TitleBarLabel.Opacity = manual ? 1 : 0.4;
         TitleBarModePanel.Visibility = hideTitle ? Visibility.Visible : Visibility.Collapsed;
+        AppOverridesCaption.Opacity = hideTitle ? 1 : 0.4;
 
         // Тень выключена — её параметры бессмысленны
         var hasShadow = _settings.ShadowEnabled;
@@ -1195,9 +1198,182 @@ public partial class SettingsWindow : Window
         e.Handled = true;
     }
 
-    private void UpdateMarkLabels()
+    // ---- Свой срез заголовка для отдельных приложений ----
+
+    /// <summary>
+    /// Число рядом с ползунком для каждой строки.
+    ///
+    /// Держим ссылками, а не ищем по дереву: строка знает своё приложение,
+    /// и обновление подписи при движении ползунка должно попасть именно в неё.
+    /// </summary>
+    private readonly Dictionary<string, TextBlock> _heightLabels = new();
+
+    /// <summary>
+    /// Строит список приложений со своей высотой среза.
+    ///
+    /// Список наполняется сам при съёмке, поэтому руками добавлять нечего —
+    /// строки только правятся и удаляются. Сортируем по имени: пути длинные,
+    /// а читать список нужно сверху вниз.
+    /// </summary>
+    private void RebuildAppOverrides()
     {
-        var mark = Selected;
+        AppOverrides.Children.Clear();
+        _heightLabels.Clear();
+
+        var entries = _settings.TitleBarOverrides
+            .OrderBy(pair => System.IO.Path.GetFileName(pair.Key), StringComparer.CurrentCultureIgnoreCase)
+            .ToList();
+
+        foreach (var (app, height) in entries)
+        {
+            var name = new TextBlock
+            {
+                Text = System.IO.Path.GetFileName(app),
+                VerticalAlignment = VerticalAlignment.Center,
+                TextTrimming = TextTrimming.CharacterEllipsis,
+                Foreground = Brushes.White,
+                ToolTip = app,
+            };
+
+            var value = new TextBlock
+            {
+                Text = Number(height),
+                Width = 34,
+                Margin = new Thickness(8, 0, 8, 0),
+                TextAlignment = TextAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Center,
+                Foreground = new SolidColorBrush(Color.FromRgb(0xC8, 0xC8, 0xD4)),
+            };
+
+            // Своя настройка на весь ряд: тянуть ползунок в строке удобнее,
+            // а точное значение всегда видно рядом числом.
+            // Стиль не задаём — у ползунка он неявный и применяется сам.
+            var slider = new Slider
+            {
+                Minimum = 0,
+                Maximum = 160,
+                Width = 130,
+                VerticalAlignment = VerticalAlignment.Center,
+                Value = height,
+                Tag = app,
+            };
+            slider.ValueChanged += OnAppHeightChanged;
+
+            var remove = new Button
+            {
+                Content = "✕",
+                Style = (Style)FindResource("IconButton"),
+                Margin = new Thickness(10, 0, 0, 0),
+                Tag = app,
+            };
+            remove.Click += OnRemoveAppOverride;
+
+            var row = new Border
+            {
+                CornerRadius = new CornerRadius(8),
+                Background = new SolidColorBrush(Color.FromRgb(0x1A, 0x1A, 0x20)),
+                BorderBrush = new SolidColorBrush(Color.FromRgb(0x2E, 0x2E, 0x38)),
+                BorderThickness = new Thickness(1),
+                Padding = new Thickness(11, 7, 11, 7),
+                Margin = new Thickness(0, 0, 0, 6),
+            };
+
+            var content = new Grid();
+            content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            content.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            content.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            content.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            Grid.SetColumn(name, 0);
+            Grid.SetColumn(value, 1);
+            Grid.SetColumn(slider, 2);
+            Grid.SetColumn(remove, 3);
+
+            content.Children.Add(name);
+            content.Children.Add(value);
+            content.Children.Add(slider);
+            content.Children.Add(remove);
+
+            row.Child = content;
+            AppOverrides.Children.Add(row);
+
+            _heightLabels[app] = value;
+        }
+
+        bool empty = entries.Count == 0;
+        AppOverridesEmpty.Visibility = empty ? Visibility.Visible : Visibility.Collapsed;
+        AppOverrides.Visibility = empty ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    /// <summary>
+    /// Добавляет приложение вручную.
+    ///
+    /// Без этого список наполнялся бы только теми приложениями, чьи окна уже
+    /// снимались, а добавить заранее — например, чтобы подготовить настройку
+    /// до первого снимка — было нечем.
+    ///
+    /// Начальная высота — системный заголовок: для обычного приложения это
+    /// ровно то, что нужно, и дальше её можно подвинуть ползунком.
+    ///
+    /// Ярлыки не принимаем: ключом служит путь к .exe, а у ярлыка свой, и
+    /// запись с ним никогда не совпала бы с реальным окном.
+    /// </summary>
+    private void OnAddAppOverride(object sender, RoutedEventArgs e)
+    {
+        if (!_ready)
+            return;
+
+        var dialog = new OpenFileDialog
+        {
+            Title = I18n.Current["set.addApp"],
+            Filter = "Applications|*.exe",
+            CheckFileExists = true,
+        };
+
+        if (dialog.ShowDialog(this) != true)
+            return;
+
+        string path = dialog.FileName;
+
+        // Повторное добавление не плодит дубликаты: у ключа тот же путь,
+        // и запись просто обновится
+        if (!_settings.TitleBarOverrides.ContainsKey(path))
+            _settings.TitleBarOverrides[path] = Interop.Native.GetSystemCaptionHeight();
+
+        RebuildAppOverrides();
+        Persist();
+    }
+
+    private void OnAppHeightChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (_loading || !_ready || sender is not Slider { Tag: string app })
+            return;
+
+        double height = Math.Round(e.NewValue);
+        _settings.TitleBarOverrides[app] = height;
+
+        // Число в строке живёт своей жизнью: ползунок сам своё Text не знает,
+        // а список пересобирается только при добавлении и удалении. Без этой
+        // строки значение менялось бы в настройках и в кадре, но не на глаз.
+        if (_heightLabels.TryGetValue(app, out var label))
+            label.Text = Number(height);
+
+        Persist();
+    }
+
+    private void OnRemoveAppOverride(object sender, RoutedEventArgs e)
+    {
+        if (!_ready || sender is not Button { Tag: string app })
+            return;
+
+        _settings.TitleBarOverrides.Remove(app);
+        RebuildAppOverrides();
+        UpdatePreview();
+        Persist();
+    }
+
+    private void UpdateMarkLabels()
+    {        var mark = Selected;
         if (mark is null)
             return;
 

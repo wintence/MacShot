@@ -733,6 +733,25 @@
                                 ValueChanged="OnTitleBarChanged"/>
                         <TextBlock Style="{StaticResource Caption}" Margin="0,8,0,0" TextWrapping="Wrap"
                                    Text="{x:Static local:L.HideTitleBarHint}"/>
+
+                        <!-- Своя высота для отдельных приложений. Список
+                             наполняется либо сам после снимка, либо вручную -->
+                        <Grid Margin="0,16,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="AppOverridesCaption" Text="{x:Static local:L.PerApp}"
+                                       Style="{StaticResource Caption}" Margin="0"/>
+                            <Button Grid.Column="1" x:Name="AddAppButton"
+                                    Content="{x:Static local:L.AddApp}"
+                                    Style="{StaticResource Button}" Click="OnAddAppOverride"
+                                    Padding="14,5"/>
+                        </Grid>
+                        <StackPanel x:Name="AppOverrides" Margin="0,0,0,0"/>
+                        <TextBlock x:Name="AppOverridesEmpty" Text="{x:Static local:L.PerAppEmpty}"
+                                   Style="{StaticResource Caption}" TextWrapping="Wrap"
+                                   Margin="0,4,0,0" Visibility="Collapsed"/>
                     </StackPanel>
                 </Border>
 

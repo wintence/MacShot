@@ -114,6 +114,57 @@ internal static class Native
         }
     }
 
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    private static extern bool QueryFullProcessImageName(
+        IntPtr process, uint flags, System.Text.StringBuilder name, ref uint size);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern IntPtr OpenProcess(uint access, bool inherit, uint pid);
+
+    [DllImport("kernel32.dll")]
+    private static extern bool CloseHandle(IntPtr handle);
+
+    private const uint PROCESS_QUERY_LIMITED_INFORMATION = 0x1000;
+
+    /// <summary>
+    /// Путь к исполняемому файлу, которому принадлежит окно.
+    ///
+    /// Это ключ для настроек, привязанных к приложению: заголовок у всех
+    /// окон одного приложения одинаковый, а у одного и того же приложения
+    /// на разных запусках — тоже. Привязываться к самому окну нельзя, его
+    /// дескриптор не переживает перезапуск.
+    /// </summary>
+    public static string GetAppPath(IntPtr hwnd)
+    {
+        try
+        {
+            GetWindowThreadProcessId(hwnd, out uint pid);
+            if (pid == 0)
+                return string.Empty;
+
+            IntPtr process = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid);
+            if (process == IntPtr.Zero)
+                return string.Empty;
+
+            try
+            {
+                uint size = 1024;
+                var buffer = new System.Text.StringBuilder((int)size);
+                return QueryFullProcessImageName(process, 0, buffer, ref size)
+                    ? buffer.ToString()
+                    : string.Empty;
+            }
+            finally
+            {
+                CloseHandle(process);
+            }
+        }
+        catch
+        {
+            return string.Empty;
+        }
+    }
+
     [DllImport("user32.dll")]
     private static extern int GetSystemMetrics(int index);
 

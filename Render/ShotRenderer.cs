@@ -283,13 +283,19 @@ internal static class ShotRenderer
     /// <summary>
     /// Высота среза, DIP.
     ///
-    /// В автоматическом режиме берётся из геометрии окна: у окон со штатным
-    /// заголовком получается ровно он, а у окон без него — около нуля, и резать
-    /// там нечего. Раньше высота была всегда задана вручную, и у окон с
-    /// собственной панелью срезался кусок содержимого.
+    /// Порядок такой: своя настройка приложения, потом общий режим. Своя
+    /// запись важнее всего — иначе приложение с собственной панелью
+    /// пришлось бы каждый раз перенастраивать глобально, задевая остальные.
     /// </summary>
     private static double TitleBarDip(AppSettings settings, double scale, IntPtr hwnd)
     {
+        if (hwnd != IntPtr.Zero &&
+            settings.TitleBarOverrides.TryGetValue(
+                Interop.Native.GetAppPath(hwnd), out double custom))
+        {
+            return custom;
+        }
+
         if (settings.TitleBarMode == TitleBarMode.Manual)
             return settings.TitleBarHeight;
 
@@ -298,4 +304,13 @@ internal static class ShotRenderer
 
         return Interop.Native.GetTitleBarHeight(hwnd, scale);
     }
+
+    /// <summary>
+    /// Высота среза для окна, DIP — то же, что применит рендер.
+    ///
+    /// Нужна, чтобы настройка, увиденная после снимка, совпадала с той,
+    /// которая на самом деле использовалась.
+    /// </summary>
+    public static double MeasureTitleBar(AppSettings settings, double scale, IntPtr hwnd) =>
+        settings.HideTitleBar ? TitleBarDip(settings, scale, hwnd) : 0;
 }

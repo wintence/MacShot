@@ -138,6 +138,10 @@ public partial class App : Application
 
             var shot = Render.ShotRenderer.Render(prepared, settings, scale);
 
+            // Снимок получился — значит, приложение тоже попало в список
+            // своих высот, ровно так же, как при съёмке по горячей клавише
+            Services.CaptureController.RememberAppTitleBar(settings, target.Handle, scale);
+
             var encoder = new PngBitmapEncoder();
             encoder.Frames.Add(BitmapFrame.Create(shot));
             using (var stream = File.Create(outputPath))

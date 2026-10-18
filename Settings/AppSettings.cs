@@ -73,6 +73,15 @@ internal sealed class AppSettings
     /// </summary>
     public double TitleBarHeight { get; set; } = 32;
 
+    /// <summary>
+    /// Высота среза для отдельных приложений: путь к .exe и сколько срезать.
+    ///
+    /// Записи важнее и общего режима, и автоопределения: одно приложение
+    /// может рисовать панель поверх клиентской области, а другое — нет,
+    /// и одна настройка на всех не подходит никому.
+    /// </summary>
+    public Dictionary<string, double> TitleBarOverrides { get; set; } = new();
+
     /// <summary>Плотность тени, 0..1.</summary>
     public double ShadowOpacity { get; set; } = 0.45;
 
@@ -119,6 +128,7 @@ internal sealed class AppSettings
         HideTitleBar = HideTitleBar,
         TitleBarMode = TitleBarMode,
         TitleBarHeight = TitleBarHeight,
+        TitleBarOverrides = new Dictionary<string, double>(TitleBarOverrides),
         ShadowOpacity = ShadowOpacity,
         ShadowBlur = ShadowBlur,
         ShadowOffsetY = ShadowOffsetY,
@@ -205,6 +215,25 @@ internal static class SettingsStore
         s.ShadowBlur = Clamp(s.ShadowBlur, 0, 120);
         s.ShadowOffsetY = Clamp(s.ShadowOffsetY, -60, 60);
         s.TitleBarHeight = Clamp(s.TitleBarHeight, 0, 200);
+
+        // Старые файлы настроек ключа не содержат — без этой проверки разбор
+        // такого файла падал бы на обращении к null
+        s.TitleBarOverrides ??= new Dictionary<string, double>();
+
+        foreach (var app in s.TitleBarOverrides.Keys.ToList())
+        {
+            double value = s.TitleBarOverrides[app];
+
+            // Запись без пути или с мусорным значением бесполезна и только
+            // занимает место в настройках
+            if (string.IsNullOrWhiteSpace(app) || double.IsNaN(value))
+            {
+                s.TitleBarOverrides.Remove(app);
+                continue;
+            }
+
+            s.TitleBarOverrides[app] = Clamp(value, 0, 200);
+        }
         s.GradientAngle = ((s.GradientAngle % 360) + 360) % 360;
         s.JpegQuality = (int)Clamp(s.JpegQuality, 1, 100);
 
