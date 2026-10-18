@@ -32,7 +32,7 @@ internal sealed class I18n
         _table = Build();
     }
 
-    public static I18n Current { get; private set; } = new(UiLanguage.Russian);
+    public static I18n Current { get; private set; } = new(UiLanguage.English);
 
     /// <summary>Сработало после смены языка — окна перечитывают строки.</summary>
     public static event Action? Changed;
@@ -118,6 +118,8 @@ internal sealed class I18n
             ["color.solid"] = "Цвет фона",
             ["color.start"] = "Начало градиента",
             ["color.end"] = "Конец градиента",
+            ["color.text"] = "Цвет надписи",
+            ["color.shadow"] = "Цвет тени надписи",
             ["color.hint"] = "Цвет фона под окном",
 
             // Общие кнопки
@@ -154,6 +156,33 @@ internal sealed class I18n
             ["set.saveHint"] = "Дополнительно к буферу обмена",
             ["set.startup"] = "Запускать при входе в Windows",
             ["set.startupHint"] = "Запись в HKCU\\...\\Run, права администратора не нужны",
+            ["set.hideSettings"] = "Скрыть настройки",
+            ["set.showSettings"] = "Показать настройки",
+            ["set.repository"] = "github.com/wintence/MacShot",
+
+            // Водяной знак
+            ["set.watermark"] = "ВОДЯНОЙ ЗНАК",
+            ["set.addText"] = "Добавить надпись",
+            ["set.addPicture"] = "Добавить картинку",
+            ["set.pickPicture"] = "Выбрать картинку…",
+            ["set.markPicture"] = "Картинка",
+            ["set.markDefaultText"] = "Текст",
+            ["set.btnRemove"] = "Удалить",
+            ["set.markEmpty"] = "Пока ничего не добавлено. Добавьте надпись или картинку — они появятся на предпросмотре слева.",
+            ["set.markShadow"] = "Тень у надписи",
+            ["set.placement"] = "ПОЛОЖЕНИЕ",
+            ["set.font"] = "ШРИФТ",
+            ["set.bold"] = "Жирный",
+            ["set.italic"] = "Курсив",
+            ["set.markFontSize"] = "КЕГЛЬ: {0}",
+            ["set.markOpacity"] = "НЕПРОЗРАЧНОСТЬ: {0}%",
+            ["set.markMargin"] = "ОТСТУП ОТ КРАЯ: {0}",
+            ["set.pictureHeight"] = "ВЫСОТА: {0}",
+            ["set.pictureOpacity"] = "НЕПРОЗРАЧНОСТЬ: {0}%",
+            ["set.pictureMargin"] = "ОТСТУП ОТ КРАЯ: {0}",
+            ["set.shadowBlur"] = "РАЗМЫТИЕ ТЕНИ: {0}",
+            ["set.shadowOpacity"] = "ПЛОТНОСТЬ ТЕНИ: {0}%",
+            ["set.preview"] = "ПРЕДПРОСМОТР",
 
             // Прочее
             ["app.alreadyRunning"] = "MacShot уже запущен — значок в трее.",
@@ -197,6 +226,8 @@ internal sealed class I18n
             ["color.solid"] = "Background color",
             ["color.start"] = "Gradient start",
             ["color.end"] = "Gradient end",
+            ["color.text"] = "Text color",
+            ["color.shadow"] = "Text shadow color",
             ["color.hint"] = "Background behind the window",
 
             ["btn.cancel"] = "Cancel",
@@ -231,6 +262,33 @@ internal sealed class I18n
             ["set.saveHint"] = "In addition to the clipboard",
             ["set.startup"] = "Start when I sign in to Windows",
             ["set.startupHint"] = "Written to HKCU\\...\\Run, no admin rights needed",
+            ["set.hideSettings"] = "Hide settings",
+            ["set.showSettings"] = "Show settings",
+            ["set.repository"] = "github.com/wintence/MacShot",
+
+            ["set.watermark"] = "WATERMARK",
+            ["set.addText"] = "Add text",
+            ["set.addPicture"] = "Add picture",
+            ["set.pickPicture"] = "Choose picture…",
+            ["set.markText"] = "Text",
+            ["set.markPicture"] = "Picture",
+            ["set.markDefaultText"] = "Text",
+            ["set.btnRemove"] = "Remove",
+            ["set.markEmpty"] = "Nothing added yet. Add a text or a picture — they show up in the preview on the left.",
+            ["set.markShadow"] = "Text shadow",
+            ["set.placement"] = "POSITION",
+            ["set.font"] = "FONT",
+            ["set.bold"] = "Bold",
+            ["set.italic"] = "Italic",
+            ["set.markFontSize"] = "FONT SIZE: {0}",
+            ["set.markOpacity"] = "OPACITY: {0}%",
+            ["set.markMargin"] = "MARGIN: {0}",
+            ["set.pictureHeight"] = "HEIGHT: {0}",
+            ["set.pictureOpacity"] = "OPACITY: {0}%",
+            ["set.pictureMargin"] = "MARGIN: {0}",
+            ["set.shadowBlur"] = "SHADOW BLUR: {0}",
+            ["set.shadowOpacity"] = "SHADOW OPACITY: {0}%",
+            ["set.preview"] = "PREVIEW",
 
             ["app.alreadyRunning"] = "MacShot is already running — see the tray icon.",
         };

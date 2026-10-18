@@ -96,7 +96,7 @@ internal sealed class HotKeyService : IDisposable
         if (msg == WmHotKey && wParam.ToInt32() == HotKeyId)
         {
             handled = true;
-            AppLog.Write("WM_HOTKEY получен");
+            AppLog.Write("WM_HOTKEY received");
             _onPressed?.Invoke();
         }
 

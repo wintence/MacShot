@@ -21,7 +21,7 @@ internal enum CaptureMethod
 }
 
 /// <summary>
-/// Захват окна в BitmapSource без системной тени Windows.
+/// Window capture into a BitmapSource, without the Windows system shadow.
 /// </summary>
 internal static class WindowCapturer
 {
@@ -70,9 +70,9 @@ internal static class WindowCapturer
             throw new CaptureException(I18n.Format("cap.imageFailed", error));
         }
 
-        // GDI альфа-канал не заполняет: после PrintWindow байт A равен нулю,
-        // и прозрачность в углах получится «дырявой». Принудительно делаем
-        // кадр непрозрачным — скругление добавит прозрачность позже.
+        // GDI leaves the alpha channel empty: after PrintWindow the A byte is zero,
+        // so corners come out see-through. The frame is forced opaque here; the rounded
+        // corners add their own transparency later.
         MakeOpaque(bitmap);
         bitmap.Freeze();
 
@@ -82,15 +82,15 @@ internal static class WindowCapturer
     }
 
     /// <summary>
-    /// PrintWindow выполняется в отдельном потоке с таймаутом.
+    /// PrintWindow runs on a worker thread with a timeout.
     ///
     /// Геометрия важна. Печатается всё окно целиком, по границам GetWindowRect,
     /// а потом кадр обрезается до DWM-границ. Если сразу рисовать в буфер
     /// размером с видимую область, содержимое сместится на ширину невидимой
     /// рамки: слева появляется полоса, справа кадр обрезается.
     ///
-    /// Рабочий поток отдаёт только сырой буфер: трогать WPF-объекты оттуда нельзя,
-    /// WriteableBitmap привязан к потоку диспетчера и отвечает отказом.
+    /// The worker only returns a raw buffer: WPF objects must not be touched from there,
+    /// a WriteableBitmap belongs to the dispatcher thread and refuses with an exception.
     /// </summary>
     private static bool TryPrintWindow(IntPtr hwnd, int width, int height, out byte[]? pixels, out string error)
     {
@@ -160,7 +160,7 @@ internal static class WindowCapturer
         return true;
     }
 
-    /// <summary>Вырезает из кадра прямоугольник нужного размера (BGRA).</summary>
+    /// <summary>Crops a rectangle of the requested size out of a BGRA frame.</summary>
     private static byte[] Crop(
         byte[] source, int sourceWidth, int sourceHeight, int x, int y, int width, int height)
     {
@@ -176,7 +176,7 @@ internal static class WindowCapturer
         return result;
     }
 
-    /// <summary>Резервный путь: копируем область экрана через BitBlt.</summary>
+    /// <summary>Fallback path: copy the screen area with BitBlt.</summary>
     private static bool TryScreenCopy(Native.RECT bounds, int width, int height,
         WriteableBitmap bitmap, out string error)
     {
@@ -215,7 +215,7 @@ internal static class WindowCapturer
         }
     }
 
-    /// <summary>Проставляет A = 255 во всём кадре.</summary>
+    /// <summary>Sets A = 255 across the whole frame.</summary>
     private static void MakeOpaque(WriteableBitmap bitmap)
     {
         int width = bitmap.PixelWidth;

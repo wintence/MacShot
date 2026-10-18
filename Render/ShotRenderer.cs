@@ -60,6 +60,22 @@ internal static class ShotRenderer
             // верхнему углу и отступ пропадал.
             Child = new Grid { Children = { shadowHost } },
         };
+
+        // Знак кладём поверх окна и тени, иначе надпись уходила бы под снимок.
+        // Слой берём того же размера, что и кадр: отступы водяного знака
+        // отсчитываются от края готовой картинки, а не от края окна.
+        if (settings.Watermark?.IsActive == true)
+        {
+            var overlay = (UIElement)WatermarkRenderer.Build(
+                settings.Watermark, canvasWidthDip, canvasHeightDip);
+
+            if (root.Child is Grid grid)
+            {
+                Panel.SetZIndex(overlay, 10);
+                grid.Children.Add(overlay);
+            }
+        }
+
         root.Measure(new Size(canvasWidthDip, canvasHeightDip));
         root.Arrange(new Rect(0, 0, canvasWidthDip, canvasHeightDip));
         root.UpdateLayout();

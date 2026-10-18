@@ -39,8 +39,8 @@ internal sealed class CaptureController : IDisposable
     {
         bool ok = _hotKey.Register(_settings.HotKey, BeginCapture);
 
-        AppLog.Write($"горячая клавиша {_settings.HotKey}: " +
-                     (ok ? "зарегистрирована" : "ОТКАЗ — " + _hotKey.LastError));
+        AppLog.Write($"hotkey {_settings.HotKey}: " +
+                     (ok ? "registered" : "FAILED - " + _hotKey.LastError));
 
         if (ok)
         {

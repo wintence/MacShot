@@ -30,8 +30,12 @@ internal sealed class AppSettings
 {
     public string HotKey { get; set; } = "Ctrl+Shift+8";
 
-    /// <summary>Язык интерфейса.</summary>
-    public UiLanguage Language { get; set; } = UiLanguage.Russian;
+    /// <summary>
+/// Interface language. English by default since the program is meant
+/// for a wide audience. The enum order is deliberately Russian-first so that
+/// settings.json files written earlier keep meaning Russian.
+/// </summary>
+    public UiLanguage Language { get; set; } = UiLanguage.English;
 
     public BackgroundKind Background { get; set; } = BackgroundKind.Gradient;
 
@@ -73,7 +77,41 @@ internal sealed class AppSettings
 
     public bool RunAtStartup { get; set; }
 
-    public AppSettings Clone() => (AppSettings)MemberwiseClone();
+    /// <summary>Надпись и логотип поверх снимка.</summary>
+    public Watermark Watermark { get; set; } = new();
+
+    /// <summary>
+    /// Копия настроек для окна настроек: правки идут в копии, и только
+    /// по кнопке сохранения попадают в живые настройки.
+    ///
+    /// Копия глубокая только для водяного знака. Остальные поля — простые
+    /// типы, им MemberwiseClone достаточно. Знак пришлось копировать вручную:
+    /// это объект, и при поверхностном копировании окно настроек и работающая
+    /// программа правили бы одни и те же данные — отмена настроек перестала бы
+    /// работать.
+    /// </summary>
+    public AppSettings Clone() => new()
+    {
+        HotKey = HotKey,
+        Language = Language,
+        Background = Background,
+        SolidColor = SolidColor,
+        GradientStart = GradientStart,
+        GradientEnd = GradientEnd,
+        GradientAngle = GradientAngle,
+        BackgroundImagePath = BackgroundImagePath,
+        Padding = Padding,
+        CornerRadius = CornerRadius,
+        ShadowEnabled = ShadowEnabled,
+        ShadowOpacity = ShadowOpacity,
+        ShadowBlur = ShadowBlur,
+        ShadowOffsetY = ShadowOffsetY,
+        SaveToDisk = SaveToDisk,
+        Format = Format,
+        JpegQuality = JpegQuality,
+        RunAtStartup = RunAtStartup,
+        Watermark = Watermark?.Clone() ?? new Watermark(),
+    };
 }
 
 /// <summary>
@@ -146,6 +184,12 @@ internal static class SettingsStore
 
         if (!HotKeyService.IsValid(s.HotKey))
             s.HotKey = "Ctrl+Shift+8";
+
+        // Старые settings.json без раздела со знаком, либо с явным null:
+        // в обоих случаях настройки должны быть рабочими, а не пустыми.
+        s.Watermark = s.Watermark is null
+            ? new Watermark()
+            : Watermark.Sanitize(s.Watermark);
 
         return s;
     }

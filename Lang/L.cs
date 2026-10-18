@@ -17,6 +17,12 @@ public static class L
     public static string TrayExit => I18n.Current["tray.exit"];
     public static string AppName => I18n.Current["tray.app"];
 
+    /// <summary>Версия программы. Показывается в заголовке окна настроек.</summary>
+    public const string Version = "1.1.0";
+
+    /// <summary>Заголовок слева сверху: имя и версия в одном месте.</summary>
+    public static string AppTitle => AppName + " " + Version;
+
     public static string Title => I18n.Current["set.title"];
 
     public static string Language => I18n.Current["set.language"];
@@ -44,9 +50,25 @@ public static class L
     public static string Startup => I18n.Current["set.startup"];
     public static string StartupHint => I18n.Current["set.startupHint"];
 
+    public static string Watermark => I18n.Current["set.watermark"];
+    public static string AddText => I18n.Current["set.addText"];
+    public static string AddPicture => I18n.Current["set.addPicture"];
+    public static string PickPicture => I18n.Current["set.pickPicture"];
+    public static string MarkText => I18n.Current["set.markText"];
+    public static string MarkShadow => I18n.Current["set.markShadow"];
+    public static string Placement => I18n.Current["set.placement"];
+    public static string Font => I18n.Current["set.font"];
+    public static string Bold => I18n.Current["set.bold"];
+    public static string Italic => I18n.Current["set.italic"];
+    public static string Preview => I18n.Current["set.preview"];
+    public static string MarkEmpty => I18n.Current["set.markEmpty"];
+    public static string HideSettings => I18n.Current["set.hideSettings"];
+    public static string ShowSettings => I18n.Current["set.showSettings"];
+    public static string Repository => I18n.Current["set.repository"];
     public static string BtnCancel => I18n.Current["btn.cancel"];
     public static string BtnDone => I18n.Current["btn.done"];
     public static string BtnCustom => I18n.Current["btn.custom"];
+    public static string BtnRemove => I18n.Current["set.btnRemove"];
     public static string HotKeyTitle => I18n.Current["hk.title"];
     public static string HotKeyPrompt => I18n.Current["hk.prompt"];
     public static string HotKeyHint => I18n.Current["hk.hint"];

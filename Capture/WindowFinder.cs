@@ -7,11 +7,11 @@ using MacShot.Interop;
 namespace MacShot.Capture;
 
 /// <summary>
-/// Перечисление и проверка окон верхнего уровня.
+/// Enumeration and inspection of top-level windows.
 /// </summary>
 internal static class WindowFinder
 {
-    /// <summary>Заголовки окон, которые нельзя снимать: они не несут смысла и мешают.</summary>
+    /// <summary>Window titles that must not be captured: they carry no meaning and get in the way.</summary>
     private static readonly HashSet<string> IgnoredTitles = new(StringComparer.OrdinalIgnoreCase)
     {
         "Program Manager",
@@ -42,8 +42,8 @@ internal static class WindowFinder
     }
 
     /// <summary>
-    /// Возвращает окно верхнего уровня под экранной точкой или null,
-    /// если под курсором ничего подходящего нет.
+    /// Returns the top-level window under a screen point, or null
+    /// if nothing suitable is under the cursor.
     /// </summary>
     public static WindowInfo? FindAt(int screenX, int screenY)
     {
@@ -59,7 +59,7 @@ internal static class WindowFinder
     }
 
     /// <summary>
-    /// Возвращает окно, если оно пригодно для захвата, иначе null.
+    /// Returns the window if it is fit for capture, otherwise null.
     /// </summary>
     public static WindowInfo? Inspect(IntPtr hwnd)
     {
@@ -69,8 +69,8 @@ internal static class WindowFinder
         if (!Native.IsWindowVisible(hwnd))
             return null;
 
-        // Окно может быть скрытым: свёрнуто в оболочку, на другом виртуальном
-        // рабочем столе или отрисовано невидимым способом.
+        // A window may be hidden: minimized into the shell, on another virtual
+        // desktop, or rendered in an invisible way.
         if (Native.IsCloaked(hwnd))
             return null;
 

@@ -4,37 +4,39 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
-    <!-- Глобальные using'и описаны в GlobalUsings.cs: implicit-версия конфликтует
-         с System.Drawing из-за NotifyIcon -->
+    <!-- Global usings live in GlobalUsings.cs: the implicit version collides
+         with System.Drawing because of NotifyIcon -->
     <ImplicitUsings>disable</ImplicitUsings>
     <UseWPF>true</UseWPF>
-    <!-- Нужен только для System.Windows.Forms.NotifyIcon -->
+    <!-- Needed solely for System.Windows.Forms.NotifyIcon -->
     <UseWindowsForms>true</UseWindowsForms>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>latest</LangVersion>
+    <Version>1.1.0</Version>
     <AssemblyName>MacShot</AssemblyName>
     <RootNamespace>MacShot</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
 
-    <!-- Значок приложения. Встраивается в .exe: виден в проводнике,
-         на панели задач и в заголовках окон. -->
+    <!-- Application icon, embedded into the .exe: shown in Explorer,
+         on the taskbar and in window title bars -->
     <ApplicationIcon>Resources\MacShotIconNew.ico</ApplicationIcon>
 
-    <!-- WFAC010 просит убрать DPI-параметры из манифеста и звать
-         Application.SetHighDpiMode. Это совет для WinForms-приложений.
-         У нас WPF: осведомлённость о DPI задаётся манифестом (PerMonitorV2),
-         иначе WPF масштабирует окно сам и координаты курсора разойдутся с
-         клиентскими. Вызвать SetHighDpiMode из WPF и нельзя. -->
+    <!-- WFAC010 asks to drop the DPI entries from the manifest and call
+         Application.SetHighDpiMode instead. That advice targets WinForms
+         applications. This is WPF: per-monitor DPI awareness comes from the
+         manifest (PerMonitorV2), otherwise WPF scales the window itself and
+         cursor coordinates stop matching client ones. WPF also offers no way
+         to call SetHighDpiMode. -->
     <NoWarn>$(NoWarn);WFAC010</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Значок приложения нужен дважды: как ApplicationIcon выше (для .exe)
-         и как ресурс сборки (для заголовков окон через Icon). -->
+    <!-- The application icon is needed twice: as ApplicationIcon above (for the
+         .exe) and as an assembly resource (for window title bars). -->
     <Resource Include="Resources\MacShotIconNew.ico" />
 
-    <!-- Значок трея — отдельный: в трее живёт 16-24 px, поэтому элементы
-         в нём толще, чем в значке приложения. -->
+    <!-- The tray icon is separate: in the tray it lives at 16-24 px, so its
+         elements are thicker than in the application icon. -->
     <Resource Include="Resources\MacShotTray.ico" />
   </ItemGroup>
 

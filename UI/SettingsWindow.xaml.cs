@@ -87,6 +87,15 @@ public partial class SettingsWindow : Window
         LangRu.IsChecked = _settings.Language == UiLanguage.Russian;
         LangEn.IsChecked = _settings.Language == UiLanguage.English;
 
+        BuildPlacementSpots();
+        FontBox.ItemsSource = Watermark.Fonts;
+
+        // Сразу показываем первый элемент: пустой редактор выглядит поломкой,
+        // хотя настроек может быть и нет, и добавлять их предстоит отсюда
+        _selected = _settings.Watermark.Marks.Count > 0 ? 0 : -1;
+        RebuildMarkList();
+        LoadMarkIntoEditor();
+
         // Образцы повторяют сохранённый цвет, а не значение из разметки
         SetSwatch(SolidSwatch, _settings.SolidColor);
         SetSwatch(GradientStartSwatch, _settings.GradientStart);
@@ -96,6 +105,7 @@ public partial class SettingsWindow : Window
 
         UpdateVisibility();
         UpdateLabels();
+        UpdateBackgroundPreview();
         UpdatePreview();
     }
 
@@ -112,17 +122,27 @@ public partial class SettingsWindow : Window
             ? Visibility.Visible : Visibility.Collapsed;
 
         ImagePathLabel.Text = string.IsNullOrWhiteSpace(_settings.BackgroundImagePath)
-            ? "Файл не выбран"
+            ? I18n.Current["set.noFile"]
             : System.IO.Path.GetFileName(_settings.BackgroundImagePath);
     }
 
+    /// <summary>
+    /// Число для подписи ползунка, без длинного дробного хвоста.
+    ///
+    /// Ползунок даёт непрерывные значения, и в подпись попадало
+    /// «23,879472693032028». Для читателя это выглядит как ошибка,
+    /// хотя просто никто не округлял.
+    /// </summary>
+    private static string Number(double value) =>
+        value.ToString("0.##", System.Globalization.CultureInfo.CurrentCulture);
+
     private void UpdateLabels()
     {
-        PaddingLabel.Text = I18n.Format("set.padding", PaddingSlider.Value);
-        AngleLabel.Text = I18n.Format("set.angle", AngleSlider.Value);
-        BlurLabel.Text = I18n.Format("set.blur", BlurSlider.Value);
-        OpacityLabel.Text = I18n.Format("set.opacity", OpacitySlider.Value);
-        OffsetLabel.Text = I18n.Format("set.offset", OffsetSlider.Value);
+        PaddingLabel.Text = I18n.Format("set.padding", Number(PaddingSlider.Value));
+        AngleLabel.Text = I18n.Format("set.angle", Number(AngleSlider.Value));
+        BlurLabel.Text = I18n.Format("set.blur", Number(BlurSlider.Value));
+        OpacityLabel.Text = I18n.Format("set.opacity", Number(OpacitySlider.Value));
+        OffsetLabel.Text = I18n.Format("set.offset", Number(OffsetSlider.Value));
 
         // Тень выключена — её параметры бессмысленны
         var hasShadow = _settings.ShadowEnabled;
@@ -135,19 +155,25 @@ public partial class SettingsWindow : Window
     }
 
     /// <summary>Живой образец фона — иначе цвет приходится запоминать на глаз.</summary>
-    private void UpdatePreview()
+    private void UpdateBackgroundPreview()
     {
-        Brush brush;
+        BackgroundPreview.Background = CurrentBackgroundBrush();
+    }
 
+    /// <summary>
+    /// Фон по текущим настройкам. Общий и для узкой полоски образца, и для
+    /// большого предпросмотра — иначе один рисовал бы градиент в другую
+    /// сторону, чем другой.
+    /// </summary>
+    private Brush CurrentBackgroundBrush()
+    {
         switch (_settings.Background)
         {
             case BackgroundKind.Solid:
-                brush = new SolidColorBrush(ColorUtil.Parse(SolidColorBox.Text, "#E9EDF5"));
-                break;
+                return new SolidColorBrush(ColorUtil.Parse(SolidColorBox.Text, "#E9EDF5"));
 
             case BackgroundKind.Image when FileOk(_settings.BackgroundImagePath):
-                brush = TryImageBrush(_settings.BackgroundImagePath);
-                break;
+                return TryImageBrush(_settings.BackgroundImagePath);
 
             default:
                 var (gStart, gEnd) = ColorUtil.GradientAxis(AngleSlider.Value);
@@ -160,11 +186,243 @@ public partial class SettingsWindow : Window
                     new GradientStop(ColorUtil.Parse(GradientStartBox.Text, "#E9EDF5"), 0));
                 gradient.GradientStops.Add(
                     new GradientStop(ColorUtil.Parse(GradientEndBox.Text, "#C3CDE0"), 1));
-                brush = gradient;
-                break;
+                return gradient;
+        }
+    }
+
+    /// <summary>Размер, в котором собирается предпросмотр.</summary>
+    private const double NominalPreviewWidth = 1200;
+    private const double NominalPreviewHeight = 760;
+
+    /// <summary>
+    /// Оболочка предпросмотра. Живёт всё время работы окна и не пересоздаётся
+    /// при правках знака: на ней висят обработчики перетаскивания, а новый
+    /// слой им терял бы захват мыши посреди перетаскивания.
+    /// </summary>
+    private Grid? _previewRoot;
+
+    /// <summary>Контейнер макета окна — его размеры зависят от отступа в настройках.</summary>
+    private Border? _previewWindow;
+
+    /// <summary>Контейнер слоя знаков: заменяется целиком при каждой правке.</summary>
+    private Border? _previewMarkHost;
+
+    /// <summary>
+    /// Контейнер квадратов позиций: лежит поверх знаков и не пересобирается,
+    /// только переключает отметку.
+    /// </summary>
+    private Canvas? _previewSpotHost;
+
+    /// <summary>
+    /// Большой предпросмотр слева: фон, макет окна и водяной знак.
+    ///
+    /// Композиция собирается в номинальном размере, а Viewbox ужимает её под
+    /// панель. Так масштаб уменьшается ровно один раз и целиком: и надпись,
+    /// и картинка, и отступы от края съезжают пропорционально, как в
+    /// настоящем кадре. Рисовать уменьшенную копию вручную означало бы
+    /// постоянно расходиться с боевым рендером.
+    /// </summary>
+    private void UpdatePreview()
+    {
+        BuildPreviewShell();
+
+        if (_previewRoot is null || _previewWindow is null || _previewMarkHost is null)
+            return;
+
+        _previewRoot.Background = CurrentBackgroundBrush();
+
+        double padding = _settings.Padding;
+        _previewWindow.Width = NominalWidthFor(padding);
+        _previewWindow.Height = NominalHeightFor(padding);
+        _previewWindow.CornerRadius = new CornerRadius(_settings.CornerRadius);
+        _previewWindow.Child = BuildMockWindowContent(_previewWindow.Width, _previewWindow.Height);
+
+        RefreshPreviewMarks();
+    }
+
+    /// <summary>
+    /// Создаёт оболочку предпросмотра один раз за сеанс окна.
+    /// Внутри два слоя: макет окна и знаки поверх него.
+    /// </summary>
+    private void BuildPreviewShell()
+    {
+        if (_previewRoot is not null)
+            return;
+
+        var window = new Border
+        {
+            Background = new SolidColorBrush(Color.FromRgb(0x3A, 0x3A, 0x46)),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            ClipToBounds = true,
+        };
+
+        var markHost = new Border
+        {
+            Width = NominalPreviewWidth,
+            Height = NominalPreviewHeight,
+        };
+
+        // Квадраты позиций поверх всего: ими выбирают, куда поставить знак
+        var spotHost = new Canvas
+        {
+            Width = NominalPreviewWidth,
+            Height = NominalPreviewHeight,
+        };
+
+        var root = new Grid
+        {
+            Width = NominalPreviewWidth,
+            Height = NominalPreviewHeight,
+            Children = { window, markHost, spotHost },
+        };
+
+        // Порядок снизу вверх: макет окна, квадраты позиций, сами знаки.
+        // Квадраты под знаками нужны, чтобы не лежать поверх надписи и не
+        // портить её читаемость; выбрать позицию всё равно можно — там, где
+        // знака нет, квадрат кликается напрямую.
+        Panel.SetZIndex(markHost, 10);
+        Panel.SetZIndex(spotHost, 5);
+
+        root.PreviewMouseLeftButtonDown += OnPreviewMarkDown;
+        root.PreviewMouseMove += OnPreviewMarkMove;
+        root.PreviewMouseLeftButtonUp += OnPreviewMarkUp;
+
+        _previewWindow = window;
+        _previewMarkHost = markHost;
+        _previewSpotHost = spotHost;
+        _previewRoot = root;
+
+        BuildPlacementSpots();
+
+        WatermarkPreview.Child = new Viewbox
+        {
+            // Только вниз: на низком окне настроек образец должен остаться
+            // читаемым, а не растянуться в размытую полосу.
+            Stretch = Stretch.Uniform,
+            StretchDirection = StretchDirection.DownOnly,
+            // К верхнему краю, а не по центру: кадр широкий, панель высокая,
+            // и при центрировании сверху и снизу оставалось бы пустое поле
+            VerticalAlignment = VerticalAlignment.Top,
+            Child = root,
+        };
+
+        WatermarkPreview.SizeChanged += (_, _) => ApplyPreviewClip();
+        ApplyPreviewClip();
+    }
+
+    /// <summary>
+    /// Скругляет содержимое предпросмотра.
+    ///
+    /// WPF умеет скруглять углы у самой рамки, но не у её содержимого:
+    /// ClipToBounds у Border режет по обычному прямоугольнику, и картинка
+    /// всё равно уезжает в углы. Поэтому содержимое режется явно геометрией.
+    /// Радиус на пиксель меньше угла рамки — иначе по краю видна полоска рамки.
+    /// </summary>
+    private void ApplyPreviewClip()
+    {
+        double width = WatermarkPreview.ActualWidth;
+        double height = WatermarkPreview.ActualHeight;
+
+        if (width <= 0 || height <= 0)
+            return;
+
+        WatermarkPreview.Clip = new RectangleGeometry(new Rect(0, 0, width, height), 11, 11);
+    }
+
+    /// <summary>
+    /// Меняет только слой знаков. Оболочка и макет окна остаются на месте —
+    /// именно поэтому перетаскивание не рвётся на середине.
+    /// </summary>
+    private void RefreshPreviewMarks()
+    {
+        if (_previewMarkHost is null)
+            return;
+
+        _previewMarkHost.Child = WatermarkRenderer.Build(
+            _settings.Watermark, NominalPreviewWidth, NominalPreviewHeight,
+            interactive: true);
+
+        // Отметку на квадратах держим в шаге с выбранным элементом: слой
+        // знаков перерисовывается на каждый ползунок, и без этого квадрат
+        // оставался бы на старой позиции.
+        var selected = Selected;
+        if (selected is not null)
+            SyncPlacementButtons(selected.Placement);
+    }
+
+    /// <summary>Прикидка содержимого снятого окна.</summary>
+    private static FrameworkElement BuildMockWindowContent(double width, double height)
+    {
+        var content = new Grid { Margin = new Thickness(20) };
+        content.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        content.RowDefinitions.Add(new RowDefinition { Height = new GridLength(14) });
+        content.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+
+        content.Children.Add(BuildMockTitleBar());
+
+        var lines = new StackPanel { VerticalAlignment = VerticalAlignment.Top };
+
+        // Строки разной длины: одинаковые читались бы как гистограмма,
+        // а не как содержимое окна
+        foreach (double share in new[] { 0.92, 0.75, 0.86, 0.55 })
+        {
+            lines.Children.Add(new Border
+            {
+                Height = 12,
+                Width = Math.Round((width - 40) * share),
+                Margin = new Thickness(0, 0, 0, 12),
+                CornerRadius = new CornerRadius(3),
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Background = new SolidColorBrush(Color.FromArgb(
+                    (byte)(70 * share), 0xFF, 0xFF, 0xFF)),
+            });
         }
 
-        BackgroundPreview.Background = brush;
+        Grid.SetRow(lines, 2);
+        content.Children.Add(lines);
+        return content;
+    }
+
+    /// <summary>При огромном отступе поля съедали бы макет окна целиком.</summary>
+    private static double NominalWidthFor(double padding) =>
+        Math.Max(240, Math.Min(1200 - padding * 2, 1200 - 24));
+
+    private static double NominalHeightFor(double padding) =>
+        Math.Max(160, Math.Min(760 - padding * 2, 760 - 24));
+
+    private static FrameworkElement BuildMockTitleBar()
+    {
+        var bar = new Grid { Height = 34 };
+        bar.Children.Add(new Border
+        {
+            CornerRadius = new CornerRadius(6),
+            Background = new SolidColorBrush(Color.FromRgb(0x4A, 0x4A, 0x59)),
+            Margin = new Thickness(0, 0, 0, 12),
+        });
+
+        // Три кружка слева — узнаваемый признак окна, как в macOS
+        var dots = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            VerticalAlignment = VerticalAlignment.Top,
+            Margin = new Thickness(2, 7, 0, 0),
+        };
+
+        foreach (var shade in new byte[] { 0xE0, 0xC0, 0x90 })
+        {
+            dots.Children.Add(new Ellipse
+            {
+                Width = 9,
+                Height = 9,
+                Margin = new Thickness(0, 0, 6, 0),
+                Fill = new SolidColorBrush(Color.FromRgb(
+                    shade, (byte)(shade - 0x10), (byte)(shade - 0x20))),
+            });
+        }
+
+        bar.Children.Add(dots);
+        return bar;
     }
 
     private static bool FileOk(string path) =>
@@ -189,6 +447,710 @@ public partial class SettingsWindow : Window
         }
     }
 
+    // ---- Водяной знак ----
+
+    /// <summary>Индекс выбранного элемента в списке.</summary>
+    private int _selected = -1;
+
+    /// <summary>
+    /// Защита от лишней работы при переносе настроек в поля редактора: без неё
+    /// выбор элемента тут же записывался бы обратно и перерисовывал список,
+    /// а правка текста гоняла бы это по кругу.
+    /// </summary>
+    private bool _loading;
+
+    /// <summary>
+    /// Идёт программная отметка квадрата позиции. Нужен, чтобы отметка,
+    /// которую ставит <see cref="SyncPlacementButtons"/>, не выглядела для
+    /// обработчика кликом пользователя и не двигала выбранный элемент.
+    /// </summary>
+    private bool _syncing;
+
+    /// <summary>Выбранный элемент или null, если список пуст.</summary>
+    private Mark? Selected =>
+        _selected >= 0 && _selected < _settings.Watermark.Marks.Count
+            ? _settings.Watermark.Marks[_selected]
+            : null;
+
+    /// <summary>
+    /// Позиции квадратов на рамке кадра в координатах холста.
+    /// Порядок совпадает со значением <see cref="Placement"/>: строка за
+    /// строкой, поэтому индекс точки — это и есть номер позиции.
+    /// </summary>
+    private static readonly (double X, double Y)[] Spots =
+    {
+        (24, 24),       (600, 24),      (1176, 24),
+        (24, 380),      (600, 380),     (1176, 380),
+        (24, 736),      (600, 736),     (1176, 736),
+    };
+
+    /// <summary>
+    /// Раскладывает квадраты позиций по рамке кадра предпросмотра.
+    ///
+    /// Квадраты стоят поверх знаков: ими удобнее выбрать место, чем тянуть
+    /// вслепую. Центральная точка попадает на макет окна — так видно, что
+    /// знак окажется на самом окне, а не на поле вокруг него.
+    /// </summary>
+    private void BuildPlacementSpots()
+    {
+        if (_previewSpotHost is null)
+            return;
+
+        for (int i = 0; i < Spots.Length; i++)
+        {
+            var (x, y) = Spots[i];
+
+            var spot = new RadioButton
+            {
+                Style = (Style)FindResource("Spot"),
+                // GroupName обязателен: без него RadioButton'ы не знают друг о друге
+                // и отмечались бы все девять сразу.
+                GroupName = "previewSpots",
+                // Индекс точки в Spots — это номер позиции, поэтому по Tag
+                // квадрат сопоставляется со значением Placement.
+                Tag = (Placement)i,
+            };
+
+            // Квадрат 24x24, поэтому его левый верхний угол — на 12 раньше точки
+            Canvas.SetLeft(spot, x - 12);
+            Canvas.SetTop(spot, y - 12);
+
+            spot.Checked += OnPlacementPicked;
+            _previewSpotHost.Children.Add(spot);
+        }
+    }
+
+    /// <summary>
+    /// Список надписей и картинок. Строится кодом, а не шаблоном: строки
+    /// короткие, их немного, а состав меняется по кнопкам — с привязкой
+    /// получилось бы больше кода, чем с пересборкой руками.
+    /// </summary>
+    private void RebuildMarkList()
+    {
+        MarkList.Children.Clear();
+
+        var marks = _settings.Watermark.Marks;
+
+        for (int i = 0; i < marks.Count; i++)
+        {
+            int index = i;
+            var mark = marks[i];
+
+            var remove = new Button
+            {
+                Content = "✕",
+                Style = (Style)FindResource("IconButton"),
+                Tag = index,
+            };
+            remove.Click += OnRemoveMarkClick;
+
+            var content = new Grid();
+            content.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            content.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            content.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            var badge = new TextBlock
+            {
+                // Буква вместо иконки: набор иконок у нас один, а здесь
+                // достаточно одного символа, чтобы различать виды
+                Text = mark.Kind == MarkKind.Text ? "T" : "▤",
+                FontSize = 13,
+                FontWeight = FontWeights.SemiBold,
+                Margin = new Thickness(0, 0, 11, 0),
+                VerticalAlignment = VerticalAlignment.Center,
+                Foreground = new SolidColorBrush(Color.FromRgb(0xA8, 0xC0, 0xE8)),
+            };
+
+            var summary = new TextBlock
+            {
+                Text = mark.Summary,
+                VerticalAlignment = VerticalAlignment.Center,
+                TextTrimming = TextTrimming.CharacterEllipsis,
+                // Цвет задаём явно: неявный стиль достаётся только элементам
+                // из разметки, а строки списка строятся кодом, и без этого
+                // подпись осталась бы цвета фона — то есть невидимой.
+                Foreground = Brushes.White,
+            };
+
+            var kind = new TextBlock
+            {
+                Text = mark.Kind == MarkKind.Text
+                    ? I18n.Current["set.markText"]
+                    : I18n.Current["set.markPicture"],
+                FontSize = 11,
+                Margin = new Thickness(10, 0, 10, 0),
+                VerticalAlignment = VerticalAlignment.Center,
+                Foreground = new SolidColorBrush(Color.FromRgb(0xC8, 0xC8, 0xD4)),
+            };
+
+            Grid.SetColumn(badge, 0);
+            Grid.SetColumn(summary, 1);
+            Grid.SetColumn(kind, 2);
+            Grid.SetColumn(remove, 3);
+
+            content.Children.Add(badge);
+            content.Children.Add(summary);
+            content.Children.Add(kind);
+            content.Children.Add(remove);
+
+            var row = new Border
+            {
+                CornerRadius = new CornerRadius(8),
+                Padding = new Thickness(11, 8, 11, 8),
+                Margin = new Thickness(0, 0, 0, 6),
+                BorderThickness = new Thickness(1),
+                Cursor = System.Windows.Input.Cursors.Hand,
+                Tag = index,
+                Child = content,
+            };
+
+            row.MouseLeftButtonUp += OnMarkRowClick;
+
+            if (index == _selected)
+                MarkRowSelected(row);
+            else
+                MarkRowPlain(row);
+
+            MarkList.Children.Add(row);
+        }
+
+        MarkEmptyHint.Visibility = marks.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        MarkEditor.Visibility = Selected is null ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    private static void MarkRowSelected(Border row)
+    {
+        row.Background = new SolidColorBrush(Color.FromRgb(0x2A, 0x3B, 0x57));
+        row.BorderBrush = new SolidColorBrush(Color.FromRgb(0x4C, 0x8D, 0xFF));
+    }
+
+    private static void MarkRowPlain(Border row)
+    {
+        row.Background = new SolidColorBrush(Color.FromRgb(0x1A, 0x1A, 0x20));
+        row.BorderBrush = new SolidColorBrush(Color.FromRgb(0x2E, 0x2E, 0x38));
+    }
+
+    /// <summary>Клик по строке списка — выбрать элемент для правки.</summary>
+    private void OnMarkRowClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        // Крестик лежит внутри строки: без этой проверки удаление
+        // тут же выбирало бы уже удалённый элемент
+        if (e.OriginalSource is System.Windows.Controls.Primitives.ButtonBase)
+            return;
+
+        if (sender is Border { Tag: int index })
+            SelectMark(index);
+    }
+
+    private void SelectMark(int index)
+    {
+        _selected = index;
+        RebuildMarkList();
+        LoadMarkIntoEditor();
+        UpdatePreview();
+    }
+
+    /// <summary>
+    /// Переносит выбранный элемент в поля редактора.
+    ///
+    /// Под _loading обработчики молчат: присваивание Text само по себе
+    /// вызывает TextChanged, который иначе записал бы старое значение
+    /// обратно поверх только что прочитанного.
+    /// </summary>
+    private void LoadMarkIntoEditor()
+    {
+        var mark = Selected;
+        if (mark is null)
+            return;
+
+        _loading = true;
+        try
+        {
+            bool text = mark.Kind == MarkKind.Text;
+
+            MarkKindLabel.Text = text
+                ? I18n.Current["set.markText"]
+                : I18n.Current["set.markPicture"];
+
+            MarkTextField.Visibility = text ? Visibility.Visible : Visibility.Collapsed;
+            MarkPicturePanel.Visibility = text ? Visibility.Collapsed : Visibility.Visible;
+            MarkStylePanel.Visibility = text ? Visibility.Visible : Visibility.Collapsed;
+            MarkColorRow.Visibility = text ? Visibility.Visible : Visibility.Collapsed;
+            // Шрифт нужен только надписи: у картинки его нет, а открытый
+            // список на месте текста выглядит как недоделка.
+            MarkFontPanel.Visibility = text ? Visibility.Visible : Visibility.Collapsed;
+
+            if (text)
+            {
+                MarkContentBox.Text = mark.Text;
+
+                FontBox.SelectedItem = Watermark.Fonts.Contains(mark.FontFamily)
+                    ? mark.FontFamily
+                    : "Segoe UI";
+
+                MarkColorBox.Text = mark.Color;
+                SetSwatch(MarkColorSwatch, mark.Color);
+
+                BoldCheck.IsChecked = mark.Bold;
+                ItalicCheck.IsChecked = mark.Italic;
+                MarkShadowCheck.IsChecked = mark.Shadow;
+
+                ShadowColorBox.Text = mark.ShadowColor;
+                SetSwatch(ShadowColorSwatch, mark.ShadowColor);
+                ShadowBlurSlider.Value = mark.ShadowBlur;
+                ShadowOpacitySlider.Value = mark.ShadowOpacity * 100;
+
+                MarkSizeSlider.Minimum = 6;
+                MarkSizeSlider.Maximum = 200;
+                MarkSizeSlider.Value = mark.Size;
+
+                MarkShadowPanel.Visibility = mark.Shadow ? Visibility.Visible : Visibility.Collapsed;
+            }
+            else
+            {
+                MarkPathLabel.Text = string.IsNullOrWhiteSpace(mark.Path)
+                    ? I18n.Current["set.noFile"]
+                    : System.IO.Path.GetFileName(mark.Path);
+
+                // У картинки размер — это высота, у надписи кегль. Диапазоны
+                // разные, иначе один ползунок тянул бы оба смысла сразу
+                MarkSizeSlider.Minimum = 8;
+                MarkSizeSlider.Maximum = 400;
+                MarkSizeSlider.Value = mark.Size;
+            }
+
+            MarkOpacitySlider.Value = mark.Opacity * 100;
+            MarkMarginSlider.Value = mark.Margin;
+
+            SyncPlacementButtons(mark.Placement);
+        }
+        finally
+        {
+            _loading = false;
+        }
+
+        UpdateMarkLabels();
+    }
+
+    /// <summary>
+    /// Ставит галочку на квадрат и прячет занятые точки.
+    ///
+    /// Отметку ставим под флагом _syncing: присваивание IsChecked поднимает
+    /// Checked, и без флага обработчик клика считал бы нашу же программную
+    /// отметку действием пользователя — и переносил выбранный элемент.
+    ///
+    /// Занятые точки прячем: там уже стоит знак, и квадрат лежал бы поверх
+    /// него. Кликнуть туда и не с чем — перенос делается перетаскиванием.
+    /// </summary>
+    private void SyncPlacementButtons(Placement place)
+    {
+        if (_previewSpotHost is null)
+            return;
+
+        var taken = _settings.Watermark.Marks
+            .Where(m => m.IsRenderable)
+            .Select(m => m.Placement)
+            .ToHashSet();
+
+        _syncing = true;
+        try
+        {
+            foreach (var spot in _previewSpotHost.Children.OfType<RadioButton>())
+            {
+                var here = (Placement)spot.Tag!;
+
+                spot.Visibility = taken.Contains(here)
+                    ? Visibility.Collapsed
+                    : Visibility.Visible;
+
+                spot.IsChecked = here == place;
+            }
+        }
+        finally
+        {
+            _syncing = false;
+        }
+    }
+
+    private void OnAddTextMark(object sender, RoutedEventArgs e)
+    {
+        var mark = new Mark
+        {
+            Kind = MarkKind.Text,
+            Text = I18n.Current["set.markDefaultText"],
+            Placement = Placement.BottomCenter,
+            Size = 24,
+        };
+
+        _settings.Watermark.Marks.Add(mark);
+        _selected = _settings.Watermark.Marks.Count - 1;
+
+        AfterListChanged();
+    }
+
+    private void OnAddPictureMark(object sender, RoutedEventArgs e)
+    {
+        var dialog = new OpenFileDialog
+        {
+            Title = I18n.Current["set.pickPicture"],
+            Filter = "Images|*.png;*.jpg;*.jpeg;*.bmp;*.webp",
+        };
+
+        if (dialog.ShowDialog(this) != true)
+            return;
+
+        var mark = new Mark
+        {
+            Kind = MarkKind.Picture,
+            Path = dialog.FileName,
+            Placement = Placement.TopLeft,
+            Size = 32,
+        };
+
+        _settings.Watermark.Marks.Add(mark);
+        _selected = _settings.Watermark.Marks.Count - 1;
+
+        AfterListChanged();
+    }
+
+    /// <summary>Крестик в строке списка.</summary>
+    private void OnRemoveMarkClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: int index })
+            return;
+
+        _settings.Watermark.Marks.RemoveAt(index);
+        _selected = ClampSelection();
+
+        AfterListChanged();
+    }
+
+    private void OnRemoveMark(object sender, RoutedEventArgs e)
+    {
+        if (Selected is null)
+            return;
+
+        _settings.Watermark.Marks.Remove(Selected);
+        _selected = ClampSelection();
+
+        AfterListChanged();
+    }
+
+    /// <summary>
+    /// После удаления индекс мог уйти за конец списка. Если список опустел,
+    /// выбор сбрасывается, и редактор прячется.
+    /// </summary>
+    private int ClampSelection()
+    {
+        int count = _settings.Watermark.Marks.Count;
+
+        if (count == 0)
+            return -1;
+
+        return Math.Clamp(_selected, 0, count - 1);
+    }
+
+    /// <summary>Общий хвост для добавления и удаления элемента.</summary>
+    private void AfterListChanged()
+    {
+        RebuildMarkList();
+        LoadMarkIntoEditor();
+        UpdatePreview();
+        Persist();
+    }
+
+    private void OnPlacementPicked(object sender, RoutedEventArgs e)
+    {
+        if (_loading || _syncing || !_ready) return;
+        if (sender is not RadioButton radio || radio.Tag is not Placement place) return;
+        if (Selected is null) return;
+
+        Selected.Placement = place;
+        UpdatePreview();
+        Persist();
+    }
+
+    private void OnMarkChanged(object sender, RoutedEventArgs e)
+    {
+        if (_loading || !_ready || Selected is null)
+            return;
+
+        var mark = Selected;
+
+        // Округляем: ползунок даёт непрерывное значение, а в файле настроек
+        // незачем хранить двадцать знаков после запятой
+        if (ReferenceEquals(sender, MarkContentBox))
+            mark.Text = MarkContentBox.Text;
+        else if (ReferenceEquals(sender, MarkSizeSlider))
+            mark.Size = Math.Round(MarkSizeSlider.Value);
+        else if (ReferenceEquals(sender, MarkOpacitySlider))
+            mark.Opacity = Math.Round(MarkOpacitySlider.Value) / 100.0;
+        else if (ReferenceEquals(sender, MarkMarginSlider))
+            mark.Margin = Math.Round(MarkMarginSlider.Value);
+        else if (ReferenceEquals(sender, FontBox))
+            mark.FontFamily = FontBox.SelectedItem as string ?? "Segoe UI";
+        else if (ReferenceEquals(sender, BoldCheck))
+            mark.Bold = BoldCheck.IsChecked == true;
+        else if (ReferenceEquals(sender, ItalicCheck))
+            mark.Italic = ItalicCheck.IsChecked == true;
+        else if (ReferenceEquals(sender, MarkShadowCheck))
+            mark.Shadow = MarkShadowCheck.IsChecked == true;
+        else if (ReferenceEquals(sender, ShadowBlurSlider))
+            mark.ShadowBlur = Math.Round(ShadowBlurSlider.Value);
+        else if (ReferenceEquals(sender, ShadowOpacitySlider))
+            mark.ShadowOpacity = Math.Round(ShadowOpacitySlider.Value) / 100.0;
+        else
+            return;
+
+        // Подпись строки в списке показывает сам текст, поэтому список
+        // приходится пересобирать на каждый символ. Элементов мало,
+        // а пересборка заодно заново подсвечивает выбранную строку.
+        RebuildMarkList();
+
+        MarkShadowPanel.Visibility = mark.Shadow ? Visibility.Visible : Visibility.Collapsed;
+
+        UpdateMarkLabels();
+        UpdatePreview();
+        Persist();
+    }
+
+    /// <summary>Цвет поменялся в поле ввода — пишем его в настройки и в образец.</summary>
+    private void OnMarkColorChanged(object sender, TextChangedEventArgs e)
+    {
+        if (_loading || !_ready || Selected is null)
+            return;
+
+        if (ReferenceEquals(sender, MarkColorBox))
+        {
+            Selected.Color = ColorUtil.Normalize(MarkColorBox.Text, "#FFFFFF");
+            SetSwatch(MarkColorSwatch, Selected.Color);
+        }
+        else if (ReferenceEquals(sender, ShadowColorBox))
+        {
+            Selected.ShadowColor = ColorUtil.Normalize(ShadowColorBox.Text, "#000000");
+            SetSwatch(ShadowColorSwatch, Selected.ShadowColor);
+        }
+        else
+        {
+            return;
+        }
+
+        UpdatePreview();
+        Persist();
+    }
+
+    /// <summary>Уход с поля: возвращаем канонический вид #RRGGBB.</summary>
+    private void OnMarkCommitted(object sender, RoutedEventArgs e)
+    {
+        if (Selected is null)
+            return;
+
+        if (ReferenceEquals(sender, MarkContentBox))
+            MarkContentBox.Text = Selected.Text;
+        else if (ReferenceEquals(sender, MarkColorBox))
+            MarkColorBox.Text = Selected.Color;
+        else if (ReferenceEquals(sender, ShadowColorBox))
+            ShadowColorBox.Text = Selected.ShadowColor;
+    }
+
+    private void OnPickMarkColor(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        => ApplyMarkColor("color.text", MarkColorBox);
+
+    private void OnPickShadowColor(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        => ApplyMarkColor("color.shadow", ShadowColorBox);
+
+    /// <summary>
+    /// Палитра для полей водяного знака. Значение попадает в настройки через
+    /// TextChanged того же поля — отдельной записи не делаем.
+    /// </summary>
+    private void ApplyMarkColor(string titleKey, TextBox box)
+    {
+        var picker = new ColorPickerWindow(I18n.Current[titleKey], box.Text) { Owner = this };
+
+        if (picker.ShowDialog() != true)
+            return;
+
+        box.Text = picker.Selected;
+    }
+
+    private void OnPickMarkPicture(object sender, RoutedEventArgs e)
+    {
+        if (Selected is not { Kind: MarkKind.Picture } mark)
+            return;
+
+        var dialog = new OpenFileDialog
+        {
+            Title = I18n.Current["set.pickPicture"],
+            Filter = "Images|*.png;*.jpg;*.jpeg;*.bmp;*.webp",
+            InitialDirectory = string.IsNullOrWhiteSpace(mark.Path)
+                ? null
+                : System.IO.Path.GetDirectoryName(mark.Path),
+        };
+
+        if (dialog.ShowDialog(this) != true)
+            return;
+
+        mark.Path = dialog.FileName;
+        MarkPathLabel.Text = System.IO.Path.GetFileName(dialog.FileName);
+
+        RebuildMarkList();
+        UpdatePreview();
+        Persist();
+    }
+
+    // ---- Перетаскивание по предпросмотру ----
+
+    /// <summary>Знак, за который сейчас тянут.</summary>
+    private Mark? _dragging;
+
+    /// <summary>Точка, где начали тянуть — от неё считаем, дрогнули ли мы.</summary>
+    private Point _dragOrigin;
+
+    /// <summary>Порог в пикселях, после которого жест считается перетаскиванием, а не кликом.</summary>
+    private const double DragThreshold = 4;
+
+    /// <summary>
+    /// Ищет знак под курсором: сам элемент несёт Tag, а у строки группы
+    /// лежит первый знак этой группы. Поэтому клик по строке целиком
+    /// тоже понимается.
+    /// </summary>
+    private static Mark? MarkUnder(DependencyObject? source)
+    {
+        for (var node = source; node is not null; node = System.Windows.Media.VisualTreeHelper.GetParent(node))
+        {
+            if (node is FrameworkElement { Tag: Mark mark })
+                return mark;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Позиция по трём на три. Порядок значений <see cref="Placement"/> как раз
+    /// построчный, поэтому из номера строки и колонки получается нужное имя.
+    /// </summary>
+    private static Placement PlacementAt(Point point)
+    {
+        int column = point.X < NominalPreviewWidth / 3 ? 0
+            : point.X < NominalPreviewWidth * 2 / 3 ? 1 : 2;
+
+        int row = point.Y < NominalPreviewHeight / 3 ? 0
+            : point.Y < NominalPreviewHeight * 2 / 3 ? 1 : 2;
+
+        return (Placement)(row * 3 + column);
+    }
+
+    private void OnPreviewMarkDown(object sender, MouseButtonEventArgs e)
+    {
+        if (!_ready || _previewRoot is null)
+            return;
+
+        var mark = MarkUnder(e.OriginalSource as DependencyObject);
+        if (mark is null)
+            return;
+
+        int index = _settings.Watermark.Marks.IndexOf(mark);
+
+        // Клик без перетаскивания просто выбирает элемент. Пересобирать
+        // редактор под рукой незачем, если он и так уже открыт.
+        if (index >= 0 && index != _selected)
+            SelectMark(index);
+
+        _dragging = mark;
+        _dragOrigin = e.GetPosition(_previewRoot);
+    }
+
+    private void OnPreviewMarkMove(object sender, MouseEventArgs e)
+    {
+        if (_previewRoot is null)
+            return;
+
+        var hovered = MarkUnder(e.OriginalSource as DependencyObject);
+        bool pressed = e.LeftButton == MouseButtonState.Pressed;
+
+        if (_dragging is null || !pressed)
+        {
+            // Курсор подаёт знак, что элемент можно тянуть
+            _previewRoot.Cursor = hovered is null ? Cursors.Arrow : Cursors.SizeAll;
+            return;
+        }
+
+        _previewRoot.Cursor = Cursors.SizeAll;
+
+        var point = e.GetPosition(_previewRoot);
+        double dx = point.X - _dragOrigin.X;
+        double dy = point.Y - _dragOrigin.Y;
+
+        // Небольшое дрожание мыши не должно перебрасывать знак в соседнюю клетку
+        if (Math.Abs(dx) < DragThreshold && Math.Abs(dy) < DragThreshold)
+            return;
+
+        var wanted = PlacementAt(point);
+        if (_dragging.Placement == wanted)
+            return;
+
+        _dragging.Placement = wanted;
+        SyncPlacementButtons(wanted);
+
+        // Перерисовываем только слой знаков: оболочка с обработчиками
+        // должна пережить перетаскивание
+        RefreshPreviewMarks();
+        Persist();
+    }
+
+    private void OnPreviewMarkUp(object sender, MouseButtonEventArgs e)
+    {
+        _dragging = null;
+    }
+
+    /// <summary>
+    /// Открывает внешнюю ссылку. Браузером по умолчанию, потому что просто
+    /// так уронить ссылку в системный браузер нельзя — только через оболочку.
+    /// </summary>
+    private void OnOpenLink(object sender, System.Windows.Navigation.RequestNavigateEventArgs e)
+    {
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = e.Uri.AbsoluteUri,
+                UseShellExecute = true,
+            });
+        }
+        catch
+        {
+            // Ссылка не открылась — молча: в логе это бесполезно,
+            // а пользователю всё равно нужен браузер, а не отчёт об ошибке
+        }
+
+        e.Handled = true;
+    }
+
+    private void UpdateMarkLabels()
+    {
+        var mark = Selected;
+        if (mark is null)
+            return;
+
+        bool text = mark.Kind == MarkKind.Text;
+
+        MarkSizeLabel.Text = text
+            ? I18n.Format("set.markFontSize", Number(MarkSizeSlider.Value))
+            : I18n.Format("set.pictureHeight", Number(MarkSizeSlider.Value));
+
+        MarkOpacityLabel.Text = text
+            ? I18n.Format("set.markOpacity", Number(MarkOpacitySlider.Value))
+            : I18n.Format("set.pictureOpacity", Number(MarkOpacitySlider.Value));
+
+        MarkMarginLabel.Text = text
+            ? I18n.Format("set.markMargin", Number(MarkMarginSlider.Value))
+            : I18n.Format("set.pictureMargin", Number(MarkMarginSlider.Value));
+
+        ShadowBlurLabel.Text = I18n.Format("set.shadowBlur", Number(ShadowBlurSlider.Value));
+        ShadowOpacityLabel.Text = I18n.Format("set.shadowOpacity", Number(ShadowOpacitySlider.Value));
+    }
+
     // ---- Обработчики ----
 
     private void OnBackgroundChanged(object sender, RoutedEventArgs e)
@@ -204,6 +1166,7 @@ public partial class SettingsWindow : Window
         };
 
         UpdateVisibility();
+        UpdateBackgroundPreview();
         UpdatePreview();
         Persist();
     }
@@ -219,6 +1182,7 @@ public partial class SettingsWindow : Window
             return;
 
         UpdateVisibility();
+        UpdateBackgroundPreview();
         UpdatePreview();
         Persist();
     }
@@ -230,12 +1194,13 @@ public partial class SettingsWindow : Window
 
         _settings.GradientAngle = e.NewValue;
         UpdateLabels();
+        UpdateBackgroundPreview();
         UpdatePreview();
         Persist();
     }
 
     private void OnPickSolid(object sender, System.Windows.Input.MouseButtonEventArgs e)
-    => ApplyPickedColor("color.solid", SolidColorBox);
+        => ApplyPickedColor("color.solid", SolidColorBox);
 
     private void OnPickGradientStart(object sender, System.Windows.Input.MouseButtonEventArgs e)
         => ApplyPickedColor("color.start", GradientStartBox);
@@ -248,6 +1213,21 @@ public partial class SettingsWindow : Window
     /// Правка идёт через те же TextBox, что и при вводе руками, поэтому
     /// сохранение и обновление предпросмотра работают одинаково.
     /// </summary>
+    private void ApplyPickedColor(string titleKey, TextBox box)
+    {
+        var picker = new ColorPickerWindow(I18n.Current[titleKey], box.Text)
+        {
+            Owner = this,
+        };
+
+        if (picker.ShowDialog() != true)
+            return;
+
+        // TextChanged сам запишет значение в настройки, обновит образец,
+        // предпросмотр и сохранит файл — дублировать это здесь не нужно
+        box.Text = picker.Selected;
+    }
+
     /// <summary>
     /// Цвет изменился в поле ввода.
     ///
@@ -255,7 +1235,7 @@ public partial class SettingsWindow : Window
     /// предпросмотр читал прямо из полей, а сохранялись старые числа из
     /// настроек — поэтому цвет возвращался при выходе из окна.
     /// </summary>
-    private void OnColorTextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+    private void OnColorTextChanged(object sender, TextChangedEventArgs e)
     {
         if (!_ready)
             return;
@@ -280,6 +1260,7 @@ public partial class SettingsWindow : Window
             return;
         }
 
+        UpdateBackgroundPreview();
         UpdatePreview();
         Persist();
     }
@@ -288,7 +1269,7 @@ public partial class SettingsWindow : Window
     /// Уход с поля. Текст приводится к каноническому виду #RRGGBB, иначе
     /// в настройках осталось бы то, что набрал пользователь.
     /// </summary>
-    private void OnColorCommitted(object sender, System.Windows.RoutedEventArgs e)
+    private void OnColorCommitted(object sender, RoutedEventArgs e)
     {
         if (ReferenceEquals(sender, SolidColorBox))
             SolidColorBox.Text = _settings.SolidColor;
@@ -303,30 +1284,18 @@ public partial class SettingsWindow : Window
         swatch.Background = new SolidColorBrush(ColorUtil.Parse(hex, "#E9EDF5"));
     }
 
-    private void ApplyPickedColor(string titleKey, TextBox box)
-    {
-        var picker = new ColorPickerWindow(I18n.Current[titleKey], box.Text);
-
-        picker.Owner = this;
-        if (picker.ShowDialog() != true)
-            return;
-
-        // TextChanged сам запишет значение в настройки, обновит образец,
-        // предпросмотр и сохранит файл — дублировать это здесь не нужно
-        box.Text = picker.Selected;
-    }
-
     private void OnValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
         if (!_ready)
             return;
 
-        if (ReferenceEquals(sender, PaddingSlider)) _settings.Padding = e.NewValue;
-        else if (ReferenceEquals(sender, BlurSlider)) _settings.ShadowBlur = e.NewValue;
-        else if (ReferenceEquals(sender, OpacitySlider)) _settings.ShadowOpacity = e.NewValue / 100;
-        else if (ReferenceEquals(sender, OffsetSlider)) _settings.ShadowOffsetY = e.NewValue;
+        if (ReferenceEquals(sender, PaddingSlider)) _settings.Padding = Math.Round(e.NewValue);
+        else if (ReferenceEquals(sender, BlurSlider)) _settings.ShadowBlur = Math.Round(e.NewValue);
+        else if (ReferenceEquals(sender, OpacitySlider)) _settings.ShadowOpacity = Math.Round(e.NewValue) / 100.0;
+        else if (ReferenceEquals(sender, OffsetSlider)) _settings.ShadowOffsetY = Math.Round(e.NewValue);
 
         UpdateLabels();
+        UpdatePreview();
         Persist();
     }
 
@@ -337,6 +1306,7 @@ public partial class SettingsWindow : Window
 
         _settings.ShadowEnabled = ShadowCheck.IsChecked == true;
         UpdateLabels();
+        UpdatePreview();
         Persist();
     }
 
@@ -358,8 +1328,8 @@ public partial class SettingsWindow : Window
     {
         var dialog = new OpenFileDialog
         {
-            Title = "Выберите фон",
-            Filter = "Изображения|*.png;*.jpg;*.jpeg;*.bmp;*.webp",
+            Title = I18n.Current["set.pickImage"],
+            Filter = "Images|*.png;*.jpg;*.jpeg;*.bmp;*.webp",
         };
 
         if (dialog.ShowDialog(this) != true)
@@ -370,6 +1340,7 @@ public partial class SettingsWindow : Window
         BgImage.IsChecked = true;
 
         UpdateVisibility();
+        UpdateBackgroundPreview();
         UpdatePreview();
         Persist();
     }

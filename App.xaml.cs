@@ -57,8 +57,25 @@ public partial class App : Application
     /// <summary>Обычный запуск: трей, горячая клавиша, защита от второго экземпляра.</summary>
     private void StartNormally()
     {
-        // Одновременно два экземпляра дрались бы за горячую клавишу
-        _singleInstance = new Mutex(true, "MacShot.SingleInstance", out bool isFirst);
+        // Мьютекс проверяем через WaitOne, а не через конструктор.
+        // new Mutex(true, name) не берёт владение, если мьютекс уже существует,
+        // поэтому после аварийного завершения прошлого экземпляра объект
+        // остаётся в системе брошенным, и все последующие запуски
+        // получают isFirst == false навсегда.
+        _singleInstance = new Mutex(false, "MacShot.SingleInstance");
+
+        bool isFirst;
+        try
+        {
+            isFirst = _singleInstance.WaitOne(0, false);
+        }
+        catch (AbandonedMutexException)
+        {
+            // Предыдущий экземпляр не завершился штатно.
+            // WaitOne при этом уже передал нам владение — продолжаем.
+            isFirst = true;
+        }
+
         if (!isFirst)
         {
             MessageBox.Show(I18n.Current["app.alreadyRunning"],
@@ -145,7 +162,7 @@ public partial class App : Application
         }
     }
 
-    private void NotifyStartup() => AppLog.Write("запуск");
+    private void NotifyStartup() => AppLog.Write("startup");
 
     private void BeginCapture()
     {
