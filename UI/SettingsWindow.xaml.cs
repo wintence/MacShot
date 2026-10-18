@@ -81,6 +81,8 @@ public partial class SettingsWindow : Window
 
         HideTitleCheck.IsChecked = _settings.HideTitleBar;
         TitleBarSlider.Value = _settings.TitleBarHeight;
+        TitleAuto.IsChecked = _settings.TitleBarMode == TitleBarMode.Auto;
+        TitleManual.IsChecked = _settings.TitleBarMode == TitleBarMode.Manual;
 
         SaveCheck.IsChecked = _settings.SaveToDisk;
         StartupCheck.IsChecked = _settings.RunAtStartup;
@@ -150,8 +152,13 @@ public partial class SettingsWindow : Window
 
         // Заголовок не срезается — высота ничего не значит
         bool hideTitle = _settings.HideTitleBar;
-        TitleBarSlider.IsEnabled = hideTitle;
-        TitleBarLabel.Opacity = hideTitle ? 1 : 0.4;
+
+        // И в автоматическом режиме ползунок бесполезен: высоту берёт окно
+        bool manual = hideTitle && _settings.TitleBarMode == TitleBarMode.Manual;
+
+        TitleBarSlider.IsEnabled = manual;
+        TitleBarLabel.Opacity = manual ? 1 : 0.4;
+        TitleBarModePanel.Visibility = hideTitle ? Visibility.Visible : Visibility.Collapsed;
 
         // Тень выключена — её параметры бессмысленны
         var hasShadow = _settings.ShadowEnabled;
@@ -245,7 +252,7 @@ public partial class SettingsWindow : Window
         _previewWindow.Height = NominalHeightFor(padding);
         _previewWindow.CornerRadius = new CornerRadius(_settings.CornerRadius);
         _previewWindow.Child = BuildMockWindowContent(
-            _previewWindow.Width, _previewWindow.Height, _settings.TitleBarHeight);
+            _previewWindow.Width, _previewWindow.Height, PreviewTitleBarDip());
 
         ApplyMockWindowClip();
 
@@ -285,7 +292,7 @@ public partial class SettingsWindow : Window
         }
 
         // Срез не должен съесть макет целиком
-        double top = Math.Clamp(_settings.TitleBarHeight, 0, height - 24);
+        double top = Math.Clamp(PreviewTitleBarDip(), 0, height - 24);
 
         // Верхние углы скруглены, нижние прямые: снизу рама уходит в тень
         var cropped = new RectangleGeometry(new Rect(0, top, width, height - top))
@@ -1385,11 +1392,30 @@ public partial class SettingsWindow : Window
             return;
 
         _settings.HideTitleBar = HideTitleCheck.IsChecked == true;
+        _settings.TitleBarMode = TitleManual.IsChecked == true
+            ? TitleBarMode.Manual
+            : TitleBarMode.Auto;
         _settings.TitleBarHeight = Math.Round(TitleBarSlider.Value);
 
         UpdateLabels();
         UpdatePreview();
         Persist();
+    }
+
+    /// <summary>
+    /// Высота среза для предпросмотра, DIP.
+    ///
+    /// В автоматическом режиме показываем системный заголовок этой системы —
+    /// ровно то, что будет срезано у обычного окна. У Electron-приложений
+    /// среза не будет вовсе, но в предпросмотре окна нет, и показать это
+    /// негде.
+    /// </summary>
+    private double PreviewTitleBarDip()
+    {
+        if (_settings.TitleBarMode == TitleBarMode.Manual)
+            return _settings.TitleBarHeight;
+
+        return Interop.Native.GetSystemCaptionHeight();
     }
 
     private void OnFlagChanged(object sender, RoutedEventArgs e)

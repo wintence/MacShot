@@ -719,7 +719,16 @@
                                   IsChecked="False" Checked="OnTitleBarChanged"
                                   Unchecked="OnTitleBarChanged" Cursor="Hand" Margin="0,18,0,0"/>
 
-                        <TextBlock x:Name="TitleBarLabel" Style="{StaticResource Caption}" Margin="0,16,0,6"/>
+                        <StackPanel x:Name="TitleBarModePanel" Margin="28,10,0,0">
+                            <RadioButton x:Name="TitleAuto" GroupName="TitleMode" Tag="Auto"
+                                         Content="{x:Static local:L.TitleAuto}"
+                                         Checked="OnTitleBarChanged" Cursor="Hand"/>
+                            <RadioButton x:Name="TitleManual" GroupName="TitleMode" Tag="Manual"
+                                         Content="{x:Static local:L.TitleManual}"
+                                         Checked="OnTitleBarChanged" Cursor="Hand" Margin="0"/>
+                        </StackPanel>
+
+                        <TextBlock x:Name="TitleBarLabel" Style="{StaticResource Caption}" Margin="0,12,0,6"/>
                         <Slider x:Name="TitleBarSlider" Minimum="0" Maximum="120" Value="32"
                                 ValueChanged="OnTitleBarChanged"/>
                         <TextBlock Style="{StaticResource Caption}" Margin="0,8,0,0" TextWrapping="Wrap"

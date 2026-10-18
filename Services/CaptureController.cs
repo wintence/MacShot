@@ -95,7 +95,7 @@ internal sealed class CaptureController : IDisposable
         var scale = Native.GetScale(window.Handle);
 
         var prepared = ShotRenderer.PrepareWindow(
-            (WriteableBitmap)capture.Bitmap, _settings, scale);
+            (WriteableBitmap)capture.Bitmap, _settings, scale, window.Handle);
 
         var shot = ShotRenderer.Render(prepared, _settings, scale);
 

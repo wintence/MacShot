@@ -248,7 +248,12 @@ internal static class ShotRenderer
     /// <param name="source">Кадр окна в физических пикселях.</param>
     /// <param name="settings">Настройки: радиус и, если включено, срез заголовка.</param>
     /// <param name="scale">Масштаб DPI монитора, где снимали окно.</param>
-    public static BitmapSource PrepareWindow(BitmapSource source, AppSettings settings, double scale)
+    /// <param name="hwnd">
+    /// Окно, снятое в кадр. Нужно в автоматическом режиме: высоту заголовка
+    /// мы берём из геометрии именно этого окна.
+    /// </param>
+    public static BitmapSource PrepareWindow(
+        BitmapSource source, AppSettings settings, double scale, IntPtr hwnd = default)
     {
         // Радиус задан в DIP, а пиксели — в физических, поэтому пересчитываем
         var working = source.IsFrozen
@@ -256,7 +261,7 @@ internal static class ShotRenderer
             : (WriteableBitmap)source;
 
         int crop = settings.HideTitleBar
-            ? (int)Math.Round(settings.TitleBarHeight * scale)
+            ? (int)Math.Round(TitleBarDip(settings, scale, hwnd) * scale)
             : 0;
 
         // Сначала срез, потом скругление. Наоборот нельзя: верхние углы,
@@ -273,5 +278,24 @@ internal static class ShotRenderer
 
         working.Freeze();
         return working;
+    }
+
+    /// <summary>
+    /// Высота среза, DIP.
+    ///
+    /// В автоматическом режиме берётся из геометрии окна: у окон со штатным
+    /// заголовком получается ровно он, а у окон без него — около нуля, и резать
+    /// там нечего. Раньше высота была всегда задана вручную, и у окон с
+    /// собственной панелью срезался кусок содержимого.
+    /// </summary>
+    private static double TitleBarDip(AppSettings settings, double scale, IntPtr hwnd)
+    {
+        if (settings.TitleBarMode == TitleBarMode.Manual)
+            return settings.TitleBarHeight;
+
+        if (hwnd == IntPtr.Zero)
+            return 0;
+
+        return Interop.Native.GetTitleBarHeight(hwnd, scale);
     }
 }

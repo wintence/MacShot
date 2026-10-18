@@ -114,6 +114,67 @@ internal static class Native
         }
     }
 
+    [DllImport("user32.dll")]
+    private static extern int GetSystemMetrics(int index);
+
+    /// <summary>
+    /// Высота системного заголовка этой системы, DIP.
+    ///
+    /// Нужна только предпросмотру: окна там нет, а показать надо что-то
+    /// похожее на настоящее. SM_CYSCAPTION у процесса с поддержкой DPI
+    /// уже возвращает значение под его масштабом.
+    /// </summary>
+    public static double GetSystemCaptionHeight()
+    {
+        const int SM_CYSCAPTION = 4;
+
+        try
+        {
+            int height = GetSystemMetrics(SM_CYSCAPTION);
+            return height > 0 ? height : 32;
+        }
+        catch
+        {
+            return 32;
+        }
+    }
+
+    [DllImport("user32.dll")]
+    private static extern bool ClientToScreen(IntPtr hwnd, ref POINT point);
+
+    /// <summary>
+    /// Высота системного заголовка окна в DIP.
+    ///
+    /// Считается как разница между верхом видимой рамки (её мы и снимаем)
+    /// и верхом клиентской области. У окон со штатным заголовком выходит его
+    /// настоящая высота вместе с невидимой рамкой захвата.
+    ///
+    /// У окон без системного заголовка — браузеров, Electron-приложений —
+    /// выходит около нуля: клиентская область начинается сразу под рамкой, и
+    /// резать там нечего. Именно поэтому фиксированная высота резала у таких
+    /// окон кусок содержимого.
+    /// </summary>
+    public static double GetTitleBarHeight(IntPtr hwnd, double scale)
+    {
+        try
+        {
+            var frame = new RECT();
+            DwmGetWindowAttribute(hwnd, DWMWA_EXTENDED_FRAME_BOUNDS, out frame, System.Runtime.InteropServices.Marshal.SizeOf<RECT>());
+
+            var origin = new POINT { X = 0, Y = 0 };
+            if (!ClientToScreen(hwnd, ref origin))
+                return 0;
+
+            double height = (origin.Y - frame.Top) / scale;
+
+            return height > 0 ? height : 0;
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+
     // ---- Мышь и клавиатура ----
 
     /// <summary>

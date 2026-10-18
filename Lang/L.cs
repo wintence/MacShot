@@ -51,6 +51,8 @@ public static class L
     public static string StartupHint => I18n.Current["set.startupHint"];
     public static string HideTitleBar => I18n.Current["set.hideTitleBar"];
     public static string HideTitleBarHint => I18n.Current["set.hideTitleBarHint"];
+    public static string TitleAuto => I18n.Current["set.titleAuto"];
+    public static string TitleManual => I18n.Current["set.titleManual"];
 
     public static string Watermark => I18n.Current["set.watermark"];
     public static string AddText => I18n.Current["set.addText"];

@@ -10,7 +10,9 @@ Window screenshots in the macOS style for Windows.
 
 Screenshots of other apps often carry a Windows title bar across the top, which breaks the illusion. Turn **Hide the window title bar** on and MacShot crops it away, leaving only the window content — with the top corners rounded to match the rest of the frame.
 
-The height is set by hand, because it cannot be detected reliably: every window and application theme draws its own, and browser and Electron apps draw theirs inside the client area rather than in the system frame. The preview on the left shows exactly how much will be cut, so you set it once and see the result.
+By default the height is **detected from the window geometry**: exactly the system caption is cut, and windows that have no system caption lose nothing. Modern apps — browsers, anything built on Electron — draw their own bar inside the client area, and those come through untouched.
+
+Switch to **Set manually** if the app does draw its own bar on top and you want it gone. The preview on the left clips its mock with the same numbers the real render uses, so it cannot show something different from the actual screenshot.
 
 ## Watermarks
 
@@ -31,7 +33,7 @@ Add a signature, a logo, or both — as many as you like. Everything is drawn on
 | Shadow | on: blur 36, offset down 16, density 0.45 |
 | Background color | palette of 29 swatches plus the system color dialog |
 | Watermark | off |
-| Hide the window title bar | off, height 32 if turned on |
+| Hide the window title bar | off, height detected from the window |
 | Hotkey | `Ctrl+Shift+8` |
 | Language | English or Russian |
 | Save a copy to Pictures | off |

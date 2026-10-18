@@ -65,13 +65,11 @@ internal sealed class AppSettings
     /// </summary>
     public bool HideTitleBar { get; set; }
 
+    /// <summary>Как искать высоту заголовка: по геометрии окна или вручную.</summary>
+    public TitleBarMode TitleBarMode { get; set; } = TitleBarMode.Auto;
+
     /// <summary>
-    /// Сколько срезать сверху, DIP.
-    ///
-    /// Высота заголовка у разных окон разная и надёжно не определяется:
-    /// браузеры и Electron рисуют свою панель внутри клиентской области,
-    /// и обычный системный заголовок к ней отношения не имеет. Поэтому
-    /// значение задаётся руками, а предпросмотр показывает результат.
+    /// Сколько срезать сверху, DIP. Используется только в ручном режиме.
     /// </summary>
     public double TitleBarHeight { get; set; } = 32;
 
@@ -119,6 +117,7 @@ internal sealed class AppSettings
         CornerRadius = CornerRadius,
         ShadowEnabled = ShadowEnabled,
         HideTitleBar = HideTitleBar,
+        TitleBarMode = TitleBarMode,
         TitleBarHeight = TitleBarHeight,
         ShadowOpacity = ShadowOpacity,
         ShadowBlur = ShadowBlur,
@@ -133,6 +132,19 @@ internal sealed class AppSettings
 
 /// <summary>
 /// Хранение настроек в %AppData%\MacShot\settings.json.
+/// </summary>
+/// <summary>Как определять высоту срезаемого заголовка.</summary>
+internal enum TitleBarMode
+{
+    /// <summary>По геометрии окна: режется ровно системный заголовок.</summary>
+    Auto,
+
+    /// <summary>Заданной вручную величиной — если у окна своя панель сверху.</summary>
+    Manual,
+}
+
+/// <summary>
+/// Хранилище настроек в %AppData%\MacShot\settings.json.
 /// </summary>
 internal static class SettingsStore
 {
