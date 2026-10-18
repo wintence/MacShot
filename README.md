@@ -4,7 +4,7 @@ Window screenshots in the macOS style for Windows.
 
 ![Windows](https://img.shields.io/badge/Windows-10%20|%2011-blue) ![.NET](https://img.shields.io/badge/.NET-8-purple) ![License](https://img.shields.io/badge/license-MIT-green)
 
-![MacShot settings](docs/screenshot.png)
+![MacShot settings](docs/screenshot.jpg)
 
 ## Watermarks
 
