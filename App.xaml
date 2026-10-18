@@ -2,6 +2,16 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              ShutdownMode="OnExplicitShutdown">
-    <!-- Палитра интерфейса не лежит здесь: её подставляет Themes/Theme
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- Общие стили с анимацией. Лежат здесь, а не в каждом
+                     окне: кнопки и флажки одинаковые везде, и вести себя
+                     они тоже должны одинаково. -->
+                <ResourceDictionary Source="UI/Styles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+    <!-- Палитра интерфейса не лежит в разметке: её подставляет Themes/Theme
          при старте, а переключается перезаписью тех же ресурсов. -->
 </Application>

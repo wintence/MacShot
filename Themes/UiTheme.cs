@@ -84,6 +84,13 @@ internal sealed class ThemePalette
         ("AccentGloss", "#33FFFFFF"),
         ("AccentHover", "#6BA1FF"),
         ("AccentPressed", "#3D7BEA"),
+        // Полупрозрачная заливка акцентом, которая проявляется под курсором.
+        // Анимируется прозрачность, а не сам цвет Background: смена цвета
+        // перерисовывает элемент процессором, а прозрачность ложится на GPU
+        // и остаётся плавной даже при сотне кнопок на экране.
+        ("AccentVeil", "#264C8DFF"),
+        // Свечение вокруг активного элемента.
+        ("Glow", "#594C8DFF"),
         ("BadgeText", "#A8C0E8"),
         ("Bg", "#17171B"),
         ("ButtonBg", "#2E2E3A"),
@@ -133,6 +140,8 @@ internal sealed class ThemePalette
         ("AccentGloss", "#4DFFFFFF"),
         ("AccentHover", "#2560CE"),
         ("AccentPressed", "#1E4FAD"),
+        ("AccentVeil", "#1F2F6FE4"),
+        ("Glow", "#332F6FE4"),
         ("BadgeText", "#2F6FE4"),
         ("Bg", "#F3F4F7"),
         ("ButtonBg", "#EDF0F4"),

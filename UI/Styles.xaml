@@ -1,0 +1,834 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Общие стили интерфейса.
+
+         Раньше они жили в Window.Resources каждого окна, и одинаковые кнопки
+         в трёх местах правились трижды. Словарь один — и анимации тоже.
+
+         Правило, которому подчинены все переходы: двигается прозрачность
+         или трансформация, но не цвет фона. Смена цвета элемента переводит
+         его на программную отрисовку, и при большом числе кнопок окно
+         начинает дёргаться. -->
+
+    <!-- ================================================================
+         Движение
+         ================================================================ -->
+
+    <!-- Основной переход: быстрый, без замедления в конце. -->
+    <CubicEase x:Key="EaseOut" EasingMode="EaseOut"/>
+
+    <!-- Лёгкое превышение: кнопка слегка прогибается и возвращается. -->
+    <BackEase x:Key="EasePress" EasingMode="EaseOut"/>
+
+    <!-- ================================================================
+         Текст
+         ================================================================ -->
+
+    <Style TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource Text}"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="TextOptions.TextFormattingMode" Value="Ideal"/>
+    </Style>
+
+    <!-- ================================================================
+         Кнопки
+         ================================================================ -->
+
+    <!-- Обычная кнопка.
+
+         Три слоя: заливка, вуаль наведения, блик сверху. Наведение не
+         меняет цвет фона, а проявляет вуаль — иначе каждый проход мыши
+         вызывал бы полную перерисовку кнопки. -->
+    <Style x:Key="Button" TargetType="Button">
+        <Setter Property="Padding" Value="18,10"/>
+        <Setter Property="Background" Value="{DynamicResource ButtonBg}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Text}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource ButtonBorder}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="B"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="9"
+                            Padding="{TemplateBinding Padding}"
+                            SnapsToDevicePixels="True">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="8" ShadowDepth="2"
+                                              Opacity="0.30" Color="#000000"/>
+                        </Border.Effect>
+
+                        <Grid RenderTransformOrigin="0.5,0.5">
+                            <Grid.RenderTransform>
+                                <ScaleTransform x:Name="S" ScaleX="1" ScaleY="1"/>
+                            </Grid.RenderTransform>
+
+                            <!-- Вуаль наведения: полупрозрачный акцент поверх
+                                 заливки. Анимируется только прозрачность. -->
+                            <Border x:Name="Veil" Background="{DynamicResource AccentVeil}"
+                                    CornerRadius="9" Opacity="0"/>
+
+                            <!-- Блик сверху: кнопка читается приподнятой даже
+                                 в тёмной теме, где тень почти не видна. -->
+                            <Border Background="{DynamicResource Gloss}" CornerRadius="8"
+                                    Height="1" VerticalAlignment="Top"/>
+
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                    </Border>
+
+                    <ControlTemplate.Triggers>
+                        <EventTrigger RoutedEvent="MouseEnter">
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <DoubleAnimation Storyboard.TargetName="Veil"
+                                                     Storyboard.TargetProperty="Opacity"
+                                                     To="1" Duration="0:0:0.12"
+                                                     EasingFunction="{StaticResource EaseOut}"/>
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+
+                        <EventTrigger RoutedEvent="MouseLeave">
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <DoubleAnimation Storyboard.TargetName="Veil"
+                                                     Storyboard.TargetProperty="Opacity"
+                                                     To="0" Duration="0:0:0.2"
+                                                     EasingFunction="{StaticResource EaseOut}"/>
+                                    <!-- Уход курсора с нажатой кнопки: без этого
+                                         она осталась бы уменьшенной. -->
+                                    <DoubleAnimation Storyboard.TargetName="S"
+                                                     Storyboard.TargetProperty="ScaleX"
+                                                     To="1" Duration="0:0:0.16"/>
+                                    <DoubleAnimation Storyboard.TargetName="S"
+                                                     Storyboard.TargetProperty="ScaleY"
+                                                     To="1" Duration="0:0:0.16"/>
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+
+                        <!-- Нажатие: лёгкое сжатие. Отпускание возвращает
+                             кнопку с небольшим перелётом, и движение
+                             читается как физика, а не как переключатель. -->
+                        <EventTrigger RoutedEvent="MouseLeftButtonDown">
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <DoubleAnimation Storyboard.TargetName="S"
+                                                     Storyboard.TargetProperty="ScaleX"
+                                                     To="0.97" Duration="0:0:0.06"/>
+                                    <DoubleAnimation Storyboard.TargetName="S"
+                                                     Storyboard.TargetProperty="ScaleY"
+                                                     To="0.97" Duration="0:0:0.06"/>
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+
+                        <EventTrigger RoutedEvent="MouseLeftButtonUp">
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <DoubleAnimation Storyboard.TargetName="S"
+                                                     Storyboard.TargetProperty="ScaleX"
+                                                     To="1" Duration="0:0:0.22"
+                                                     EasingFunction="{StaticResource EasePress}"/>
+                                    <DoubleAnimation Storyboard.TargetName="S"
+                                                     Storyboard.TargetProperty="ScaleY"
+                                                     To="1" Duration="0:0:0.22"
+                                                     EasingFunction="{StaticResource EasePress}"/>
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="B" Property="Opacity" Value="0.45"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="IconButton" TargetType="Button" BasedOn="{StaticResource Button}">
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="Width" Value="26"/>
+        <Setter Property="Height" Value="26"/>
+        <Setter Property="Background" Value="{DynamicResource Surface}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource ButtonBorder}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
+        <Setter Property="FontSize" Value="12"/>
+    </Style>
+
+    <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource Button}">
+        <Setter Property="Foreground" Value="{DynamicResource DangerText}"/>
+        <Setter Property="Background" Value="{DynamicResource DangerBg}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource DangerBorder}"/>
+    </Style>
+
+    <!-- Главная кнопка. Вуаль поверх насыщенного акцента почти не видна,
+         поэтому наведение показывается подъёмом и усилением свечения. -->
+    <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource Button}">
+        <Setter Property="Background" Value="{DynamicResource Accent}"/>
+        <Setter Property="Foreground" Value="{DynamicResource OnAccent}"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
+        <Setter Property="Padding" Value="26,11"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid RenderTransformOrigin="0.5,0.5">
+                        <Grid.RenderTransform>
+                            <ScaleTransform x:Name="S" ScaleX="1" ScaleY="1"/>
+                        </Grid.RenderTransform>
+
+                        <!-- Широкое свечение вокруг кнопки. Без него
+                             акцент выглядит плоской заливкой. -->
+                        <Border x:Name="Halo" Background="{DynamicResource Glow}"
+                                CornerRadius="16" Margin="0,2" Opacity="0"/>
+
+                        <Border x:Name="B" Background="{TemplateBinding Background}"
+                                CornerRadius="9"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="1"
+                                Padding="{TemplateBinding Padding}"
+                                RenderTransformOrigin="0.5,0.5">
+                            <Border.RenderTransform>
+                                <TranslateTransform x:Name="Lift" Y="0"/>
+                            </Border.RenderTransform>
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="16" ShadowDepth="3"
+                                                  Opacity="0.42" Color="#1B4F9E"/>
+                            </Border.Effect>
+                            <Grid>
+                                <Border Background="{DynamicResource AccentGloss}" CornerRadius="8"
+                                        Height="1" VerticalAlignment="Top"/>
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                    </Grid>
+
+                    <ControlTemplate.Triggers>
+                        <EventTrigger RoutedEvent="MouseEnter">
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <DoubleAnimation Storyboard.TargetName="Halo"
+                                                     Storyboard.TargetProperty="Opacity"
+                                                     To="1" Duration="0:0:0.16"
+                                                     EasingFunction="{StaticResource EaseOut}"/>
+                                    <DoubleAnimation Storyboard.TargetName="Lift"
+                                                     Storyboard.TargetProperty="Y"
+                                                     To="-1" Duration="0:0:0.16"
+                                                     EasingFunction="{StaticResource EaseOut}"/>
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+
+                        <EventTrigger RoutedEvent="MouseLeave">
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <DoubleAnimation Storyboard.TargetName="Halo"
+                                                     Storyboard.TargetProperty="Opacity"
+                                                     To="0" Duration="0:0:0.24"
+                                                     EasingFunction="{StaticResource EaseOut}"/>
+                                    <DoubleAnimation Storyboard.TargetName="Lift"
+                                                     Storyboard.TargetProperty="Y"
+                                                     To="0" Duration="0:0:0.24"
+                                                     EasingFunction="{StaticResource EaseOut}"/>
+                                    <DoubleAnimation Storyboard.TargetName="S"
+                                                     Storyboard.TargetProperty="ScaleX"
+                                                     To="1" Duration="0:0:0.16"/>
+                                    <DoubleAnimation Storyboard.TargetName="S"
+                                                     Storyboard.TargetProperty="ScaleY"
+                                                     To="1" Duration="0:0:0.16"/>
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+
+                        <EventTrigger RoutedEvent="MouseLeftButtonDown">
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <DoubleAnimation Storyboard.TargetName="S"
+                                                     Storyboard.TargetProperty="ScaleX"
+                                                     To="0.97" Duration="0:0:0.06"/>
+                                    <DoubleAnimation Storyboard.TargetName="S"
+                                                     Storyboard.TargetProperty="ScaleY"
+                                                     To="0.97" Duration="0:0:0.06"/>
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+
+                        <EventTrigger RoutedEvent="MouseLeftButtonUp">
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <DoubleAnimation Storyboard.TargetName="S"
+                                                     Storyboard.TargetProperty="ScaleX"
+                                                     To="1" Duration="0:0:0.22"
+                                                     EasingFunction="{StaticResource EasePress}"/>
+                                    <DoubleAnimation Storyboard.TargetName="S"
+                                                     Storyboard.TargetProperty="ScaleY"
+                                                     To="1" Duration="0:0:0.22"
+                                                     EasingFunction="{StaticResource EasePress}"/>
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ================================================================
+         Поле ввода
+         ================================================================ -->
+
+    <Style TargetType="TextBox">
+        <Setter Property="Foreground" Value="{DynamicResource Text}"/>
+        <Setter Property="CaretBrush" Value="{DynamicResource Text}"/>
+        <Setter Property="SelectionBrush" Value="{DynamicResource Accent}"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="FontFamily" Value="Cascadia Mono, Consolas"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TextBox">
+                    <ScrollViewer x:Name="PART_ContentHost"
+                                  Margin="0" VerticalAlignment="Center"
+                                  Focusable="False"
+                                  HorizontalScrollBarVisibility="Hidden"
+                                  VerticalScrollBarVisibility="Hidden"/>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ================================================================
+         Ползунок
+         ================================================================ -->
+
+    <!-- Ползунок не меняет цвет и не имеет эффектов: анимируется только
+         размер и свечение вокруг большого пальца. -->
+    <Style x:Key="Thumb" TargetType="Thumb">
+        <Setter Property="Width" Value="16"/>
+        <Setter Property="Height" Value="16"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Thumb">
+                    <Grid RenderTransformOrigin="0.5,0.5">
+                        <Grid.RenderTransform>
+                            <ScaleTransform x:Name="S" ScaleX="1" ScaleY="1"/>
+                        </Grid.RenderTransform>
+
+                        <!-- Свечение под большим пальцем: без него ползунок
+                             на тёмной карточке почти не виден. -->
+                        <Ellipse x:Name="Halo" Fill="{DynamicResource Glow}" Opacity="0"
+                                 Width="28" Height="28"/>
+
+                        <Ellipse Fill="{DynamicResource Text}"
+                                 Stroke="{DynamicResource ControlLine}" StrokeThickness="1"
+                                 Width="14" Height="14"/>
+                    </Grid>
+
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="Halo"
+                                                         Storyboard.TargetProperty="Opacity"
+                                                         To="0.9" Duration="0:0:0.14"
+                                                         EasingFunction="{StaticResource EaseOut}"/>
+                                        <DoubleAnimation Storyboard.TargetName="S"
+                                                         Storyboard.TargetProperty="ScaleX"
+                                                         To="1.25" Duration="0:0:0.14"
+                                                         EasingFunction="{StaticResource EaseOut}"/>
+                                        <DoubleAnimation Storyboard.TargetName="S"
+                                                         Storyboard.TargetProperty="ScaleY"
+                                                         To="1.25" Duration="0:0:0.14"
+                                                         EasingFunction="{StaticResource EaseOut}"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="Halo"
+                                                         Storyboard.TargetProperty="Opacity"
+                                                         To="0" Duration="0:0:0.22"/>
+                                        <DoubleAnimation Storyboard.TargetName="S"
+                                                         Storyboard.TargetProperty="ScaleX"
+                                                         To="1" Duration="0:0:0.22"
+                                                         EasingFunction="{StaticResource EaseOut}"/>
+                                        <DoubleAnimation Storyboard.TargetName="S"
+                                                         Storyboard.TargetProperty="ScaleY"
+                                                         To="1" Duration="0:0:0.22"
+                                                         EasingFunction="{StaticResource EaseOut}"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="Slider">
+        <Setter Property="Height" Value="20"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Slider">
+                    <Grid VerticalAlignment="Center">
+                        <Border Height="4" CornerRadius="2" Background="{DynamicResource TrackBg}"/>
+                        <Track x:Name="PART_Track">
+                            <Track.DecreaseRepeatButton>
+                                <RepeatButton Command="Slider.DecreaseLarge" Opacity="0" Focusable="False"/>
+                            </Track.DecreaseRepeatButton>
+                            <Track.IncreaseRepeatButton>
+                                <RepeatButton Command="Slider.IncreaseLarge" Opacity="0" Focusable="False"/>
+                            </Track.IncreaseRepeatButton>
+                            <Track.Thumb>
+                                <Thumb Style="{StaticResource Thumb}"/>
+                            </Track.Thumb>
+                        </Track>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ================================================================
+         Флажок
+         ================================================================ -->
+
+    <Style TargetType="CheckBox">
+        <Setter Property="Foreground" Value="{DynamicResource Text}"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="CheckBox">
+                    <StackPanel Orientation="Horizontal" Background="Transparent">
+                        <Border x:Name="Box" Width="18" Height="18" CornerRadius="5"
+                                Background="{DynamicResource Input}"
+                                BorderBrush="{DynamicResource ControlLine}" BorderThickness="1.5"
+                                VerticalAlignment="Center"
+                                RenderTransformOrigin="0.5,0.5">
+                            <Border.RenderTransform>
+                                <ScaleTransform x:Name="BS" ScaleX="1" ScaleY="1"/>
+                            </Border.RenderTransform>
+                            <Grid>
+                                <!-- Галочка обводится штрихом, а не появляется
+                                     целиком: движение штриха заметно и приятно,
+                                     а смена видимости выглядит как щелчок. -->
+                                <Path x:Name="Check" Data="M 3,9 L 7,13 L 15,4"
+                                      Stroke="{DynamicResource OnAccent}" StrokeThickness="2.2"
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                      StrokeDashArray="17" StrokeDashOffset="17"
+                                      Opacity="0" RenderTransformOrigin="0.5,0.5">
+                                    <Path.RenderTransform>
+                                        <ScaleTransform x:Name="CS" ScaleX="0.6" ScaleY="0.6"/>
+                                    </Path.RenderTransform>
+                                </Path>
+                            </Grid>
+                        </Border>
+                        <ContentPresenter Margin="10,0,0,0" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="Check"
+                                                         Storyboard.TargetProperty="StrokeDashOffset"
+                                                         To="0" Duration="0:0:0.18"
+                                                         EasingFunction="{StaticResource EaseOut}"/>
+                                        <DoubleAnimation Storyboard.TargetName="Check"
+                                                         Storyboard.TargetProperty="Opacity"
+                                                         To="1" Duration="0:0:0.1"/>
+                                        <DoubleAnimation Storyboard.TargetName="CS"
+                                                         Storyboard.TargetProperty="ScaleX"
+                                                         To="1" Duration="0:0:0.24"
+                                                         EasingFunction="{StaticResource EasePress}"/>
+                                        <DoubleAnimation Storyboard.TargetName="CS"
+                                                         Storyboard.TargetProperty="ScaleY"
+                                                         To="1" Duration="0:0:0.24"
+                                                         EasingFunction="{StaticResource EasePress}"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="Check"
+                                                         Storyboard.TargetProperty="Opacity"
+                                                         To="0" Duration="0:0:0.14"/>
+                                        <DoubleAnimation Storyboard.TargetName="CS"
+                                                         Storyboard.TargetProperty="ScaleX"
+                                                         To="0.6" Duration="0:0:0.14"/>
+                                        <DoubleAnimation Storyboard.TargetName="CS"
+                                                         Storyboard.TargetProperty="ScaleY"
+                                                         To="0.6" Duration="0:0:0.14"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                            <Setter TargetName="Box" Property="Background" Value="{DynamicResource Accent}"/>
+                            <Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource Accent}"/>
+                        </Trigger>
+
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <!-- Коробка слегка растёт: наведение
+                                             заметно даже на мелком флажке. -->
+                                        <DoubleAnimation Storyboard.TargetName="BS"
+                                                         Storyboard.TargetProperty="ScaleX"
+                                                         To="1.1" Duration="0:0:0.14"
+                                                         EasingFunction="{StaticResource EaseOut}"/>
+                                        <DoubleAnimation Storyboard.TargetName="BS"
+                                                         Storyboard.TargetProperty="ScaleY"
+                                                         To="1.1" Duration="0:0:0.14"
+                                                         EasingFunction="{StaticResource EaseOut}"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="BS"
+                                                         Storyboard.TargetProperty="ScaleX"
+                                                         To="1" Duration="0:0:0.2"/>
+                                        <DoubleAnimation Storyboard.TargetName="BS"
+                                                         Storyboard.TargetProperty="ScaleY"
+                                                         To="1" Duration="0:0:0.2"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                            <Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource Accent}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ================================================================
+         Переключатель-радио
+         ================================================================ -->
+
+    <Style TargetType="RadioButton">
+        <Setter Property="Foreground" Value="{DynamicResource Text}"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Margin" Value="0,0,0,8"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RadioButton">
+                    <StackPanel Orientation="Horizontal" Background="Transparent">
+                        <Grid Width="18" Height="18" VerticalAlignment="Center">
+                            <Grid.RenderTransform>
+                                <ScaleTransform x:Name="RS" ScaleX="1" ScaleY="1"/>
+                            </Grid.RenderTransform>
+                            <Ellipse Fill="{DynamicResource Glow}" Opacity="0"
+                                     Width="26" Height="26" RenderTransformOrigin="0.5,0.5"/>
+                            <Ellipse x:Name="Ring" Fill="{DynamicResource Input}"
+                                     Stroke="{DynamicResource ControlLine}" StrokeThickness="1.5"/>
+                            <Ellipse x:Name="Dot" Width="8" Height="8"
+                                     Fill="{DynamicResource Accent}" Opacity="0"
+                                     RenderTransformOrigin="0.5,0.5">
+                                <Ellipse.RenderTransform>
+                                    <ScaleTransform x:Name="DS" ScaleX="0.2" ScaleY="0.2"/>
+                                </Ellipse.RenderTransform>
+                            </Ellipse>
+                        </Grid>
+                        <ContentPresenter Margin="10,0,0,0" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="Dot"
+                                                         Storyboard.TargetProperty="Opacity"
+                                                         To="1" Duration="0:0:0.12"/>
+                                        <DoubleAnimation Storyboard.TargetName="DS"
+                                                         Storyboard.TargetProperty="ScaleX"
+                                                         To="1" Duration="0:0:0.24"
+                                                         EasingFunction="{StaticResource EasePress}"/>
+                                        <DoubleAnimation Storyboard.TargetName="DS"
+                                                         Storyboard.TargetProperty="ScaleY"
+                                                         To="1" Duration="0:0:0.24"
+                                                         EasingFunction="{StaticResource EasePress}"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="Dot"
+                                                         Storyboard.TargetProperty="Opacity"
+                                                         To="0" Duration="0:0:0.14"/>
+                                        <DoubleAnimation Storyboard.TargetName="DS"
+                                                         Storyboard.TargetProperty="ScaleX"
+                                                         To="0.2" Duration="0:0:0.14"/>
+                                        <DoubleAnimation Storyboard.TargetName="DS"
+                                                         Storyboard.TargetProperty="ScaleY"
+                                                         To="0.2" Duration="0:0:0.14"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                            <Setter TargetName="Ring" Property="Stroke" Value="{DynamicResource Accent}"/>
+                        </Trigger>
+
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="RS"
+                                                         Storyboard.TargetProperty="ScaleX"
+                                                         To="1.12" Duration="0:0:0.14"
+                                                         EasingFunction="{StaticResource EaseOut}"/>
+                                        <DoubleAnimation Storyboard.TargetName="RS"
+                                                         Storyboard.TargetProperty="ScaleY"
+                                                         To="1.12" Duration="0:0:0.14"
+                                                         EasingFunction="{StaticResource EaseOut}"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="RS"
+                                                         Storyboard.TargetProperty="ScaleX"
+                                                         To="1" Duration="0:0:0.2"/>
+                                        <DoubleAnimation Storyboard.TargetName="RS"
+                                                         Storyboard.TargetProperty="ScaleY"
+                                                         To="1" Duration="0:0:0.2"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                            <Setter TargetName="Ring" Property="Stroke" Value="{DynamicResource Accent}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ================================================================
+         Полоса прокрутки
+         ================================================================ -->
+
+    <Style x:Key="ScrollThumb" TargetType="Thumb">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Thumb">
+                    <Border x:Name="B" Background="{DynamicResource ScrollThumbBg}"
+                            CornerRadius="4" Margin="3,0" Opacity="0.55"/>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="B"
+                                                         Storyboard.TargetProperty="Opacity"
+                                                         To="1" Duration="0:0:0.14"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="B"
+                                                         Storyboard.TargetProperty="Opacity"
+                                                         To="0.55" Duration="0:0:0.3"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="ScrollBar">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Width" Value="12"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ScrollBar">
+                    <Grid Background="Transparent">
+                        <Track x:Name="PART_Track" IsDirectionReversed="True">
+                            <Track.DecreaseRepeatButton>
+                                <RepeatButton Command="ScrollBar.PageUpCommand" Opacity="0" Focusable="False"/>
+                            </Track.DecreaseRepeatButton>
+                            <Track.IncreaseRepeatButton>
+                                <RepeatButton Command="ScrollBar.PageDownCommand" Opacity="0" Focusable="False"/>
+                            </Track.IncreaseRepeatButton>
+                            <Track.Thumb>
+                                <Thumb Style="{StaticResource ScrollThumb}"/>
+                            </Track.Thumb>
+                        </Track>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ================================================================
+         Выпадающий список
+         ================================================================ -->
+
+    <Style TargetType="ComboBox">
+        <Setter Property="Foreground" Value="{DynamicResource Text}"/>
+        <Setter Property="Background" Value="{DynamicResource Input}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource CardLine}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="9,6"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ComboBox">
+                    <Grid>
+                        <ToggleButton x:Name="Toggle" Focusable="False" ClickMode="Press"
+                                      IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
+                            <ToggleButton.Template>
+                                <ControlTemplate TargetType="ToggleButton">
+                                    <Border x:Name="F" Background="{DynamicResource Input}"
+                                            BorderBrush="{DynamicResource CardLine}" BorderThickness="1"
+                                            CornerRadius="8"/>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="F" Property="BorderBrush" Value="{DynamicResource Accent}"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </ToggleButton.Template>
+                        </ToggleButton>
+
+                        <ContentPresenter x:Name="Site" Margin="11,7" VerticalAlignment="Center"
+                                          Content="{TemplateBinding SelectionBoxItem}"
+                                          ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                          IsHitTestVisible="False"/>
+
+                        <Path x:Name="Arrow" HorizontalAlignment="Right" Margin="0,0,11,0"
+                              Data="M 0,0 L 4,4 L 8,0" Stroke="{DynamicResource Muted}"
+                              StrokeThickness="1.4" VerticalAlignment="Center"
+                              RenderTransformOrigin="0.5,0.5">
+                            <Path.RenderTransform>
+                                <RotateTransform x:Name="AR" Angle="0" CenterX="4" CenterY="2"/>
+                            </Path.RenderTransform>
+                        </Path>
+
+                        <!-- Список выезжает сверху вниз и проявляется.
+                             Одного Fade было мало: список появлялся
+                             мгновенно и выглядел вставленным. -->
+                        <Popup x:Name="PART_Popup" AllowsTransparency="True" Placement="Bottom"
+                               IsOpen="{TemplateBinding IsDropDownOpen}" PopupAnimation="Slide">
+                            <Border x:Name="Drop" Background="{DynamicResource Surface}"
+                                    BorderBrush="{DynamicResource CardLine}"
+                                    BorderThickness="1" CornerRadius="10"
+                                    Margin="0,6,0,0" MinWidth="{TemplateBinding ActualWidth}"
+                                    MaxHeight="260" RenderTransformOrigin="0.5,0">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="24" ShadowDepth="6" Opacity="0.45"/>
+                                </Border.Effect>
+                                <Border.RenderTransform>
+                                    <TranslateTransform x:Name="DropLift" Y="-8"/>
+                                </Border.RenderTransform>
+                                <ScrollViewer>
+                                    <ItemsPresenter/>
+                                </ScrollViewer>
+                            </Border>
+                        </Popup>
+                    </Grid>
+
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsDropDownOpen" Value="True">
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="Drop"
+                                                         Storyboard.TargetProperty="Opacity"
+                                                         From="0" To="1" Duration="0:0:0.14"
+                                                         EasingFunction="{StaticResource EaseOut}"/>
+                                        <DoubleAnimation Storyboard.TargetName="DropLift"
+                                                         Storyboard.TargetProperty="Y"
+                                                         From="-8" To="0" Duration="0:0:0.18"
+                                                         EasingFunction="{StaticResource EaseOut}"/>
+                                        <DoubleAnimation Storyboard.TargetName="AR"
+                                                         Storyboard.TargetProperty="Angle"
+                                                         To="180" Duration="0:0:0.16"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="Drop"
+                                                         Storyboard.TargetProperty="Opacity"
+                                                         From="1" To="0" Duration="0:0:0.12"/>
+                                        <DoubleAnimation Storyboard.TargetName="DropLift"
+                                                         Storyboard.TargetProperty="Y"
+                                                         From="0" To="-8" Duration="0:0:0.12"/>
+                                        <DoubleAnimation Storyboard.TargetName="AR"
+                                                         Storyboard.TargetProperty="Angle"
+                                                         To="0" Duration="0:0:0.16"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                            <Setter TargetName="Arrow" Property="Stroke" Value="{DynamicResource Accent}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="ComboBoxItem">
+        <Setter Property="Foreground" Value="{DynamicResource Text}"/>
+        <Setter Property="Padding" Value="11,7"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ComboBoxItem">
+                    <Border x:Name="B" Background="Transparent" CornerRadius="6"
+                            Margin="3,2" Padding="{TemplateBinding Padding}">
+                        <ContentPresenter/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsHighlighted" Value="True">
+                            <Setter TargetName="B" Property="Background" Value="{DynamicResource AccentDim}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ================================================================
+         Появление окна
+         ================================================================ -->
+
+    <!-- Готовая анимация появления. Код вызывает её на элементе и задаёт
+         задержку, чтобы секции въезжали по очереди, а не разом. -->
+    <Storyboard x:Key="Appear">
+        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                         From="0" To="1" Duration="0:0:0.28"
+                         EasingFunction="{StaticResource EaseOut}"/>
+        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                         From="14" To="0" Duration="0:0:0.42"
+                         EasingFunction="{StaticResource EaseOut}"/>
+    </Storyboard>
+
+</ResourceDictionary>

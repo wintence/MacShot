@@ -105,12 +105,15 @@ public sealed class HotKeyDialog : Window
         var button = new Button
         {
             Content = text,
-            Padding = new Thickness(18, 9, 18, 9),
+            Padding = new Thickness(18, 10, 18, 10),
             Margin = new Thickness(8, 0, 0, 0),
             Cursor = Cursors.Hand,
-            BorderThickness = new Thickness(0),
-            Foreground = flat ? Theme.Palette.Of("Text") : Theme.Palette.Of("OnAccent"),
-            Background = flat ? Theme.Palette.Of("ButtonBg") : Theme.Palette.Of("Accent"),
+            // Стиль берём из общих ресурсов приложения: иначе кнопка
+            // нарисовалась бы системная, и в тёмном окне светлый прямоугольник
+            // выглядел бы чужеродно.
+            Style = flat
+                ? (Style)Application.Current.FindResource("Button")
+                : (Style)Application.Current.FindResource("PrimaryButton"),
         };
 
         return button;

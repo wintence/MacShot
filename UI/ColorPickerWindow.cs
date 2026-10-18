@@ -46,9 +46,6 @@ internal sealed class ColorPickerWindow : Window
     private readonly Brush _line = Theme.Palette.Of("CardLine");
     private readonly Brush _text = Theme.Palette.Of("Text");
     private readonly Brush _muted = Theme.Palette.Of("Muted");
-    private readonly Brush _accent = Theme.Palette.Of("Accent");
-    private readonly Brush _onAccent = Theme.Palette.Of("OnAccent");
-    private readonly Brush _flatBg = Theme.Palette.Of("ButtonBg");
     private readonly Brush _controlLine = Theme.Palette.Of("ControlLine");
 
     private static Brush Frozen(string hex)
@@ -214,12 +211,15 @@ internal sealed class ColorPickerWindow : Window
         var button = new Button
         {
             Content = text,
-            Padding = new Thickness(16, 8, 16, 8),
+            Padding = new Thickness(16, 9, 16, 9),
             Margin = new Thickness(8, 0, 0, 0),
             Cursor = Cursors.Hand,
-            BorderThickness = new Thickness(0),
-            Foreground = flat ? _text : _onAccent,
-            Background = flat ? _flatBg : _accent,
+            // Общий стиль из ресурсов приложения — с теми же анимациями,
+            // что и в окне настроек. Свои цвета здесь задавать нельзя:
+            // они остались бы от палитры на момент открытия диалога.
+            Style = flat
+                ? (Style)Application.Current.FindResource("Button")
+                : (Style)Application.Current.FindResource("PrimaryButton"),
         };
 
         return button;

@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using Microsoft.Win32;
 using MacShot.Render;
 using MacShot.Services;
@@ -105,9 +107,74 @@ public partial class SettingsWindow : Window
         }));
     }
 
+    /// <summary>
+    /// Секции въезжают по очереди при открытии окна.
+    ///
+    /// Задержка задаётся вручную, а не вычисляется: у панели справа есть
+    /// прокрутка, и часть секций приходит в кадр позже. Всё равно очередь
+    /// ровная и предсказуемая — с вычислением она зависела бы от прокрутки
+    /// и прыгала при первом изменении размеров окна.
+    ///
+    /// Анимация сдвигает только прозрачность и вертикальное смещение:
+    /// оба идут через композитор, и окно открывается плавно даже на слабом
+    /// ноутбуке.
+    /// </summary>
+    private void AnimateIn()
+    {
+        if (SettingsPanel is null)
+            return;
+
+        var groups = SettingsPanel.Children.OfType<Border>().ToList();
+        int index = 0;
+
+        foreach (Border group in groups)
+        {
+            group.RenderTransformOrigin = new Point(0.5, 0.5);
+            group.RenderTransform = new TranslateTransform(0, 14);
+            group.Opacity = 0;
+
+            var board = new Storyboard();
+
+            var fade = new DoubleAnimation
+            {
+                From = 0,
+                To = 1,
+                Duration = TimeSpan.FromMilliseconds(280),
+                BeginTime = TimeSpan.FromMilliseconds(index * 45),
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
+            };
+
+            var rise = new DoubleAnimation
+            {
+                From = 14,
+                To = 0,
+                Duration = TimeSpan.FromMilliseconds(420),
+                BeginTime = TimeSpan.FromMilliseconds(index * 45),
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
+            };
+
+            Storyboard.SetTargetProperty(fade, new PropertyPath(UIElement.OpacityProperty));
+            Storyboard.SetTarget(fade, group);
+
+            Storyboard.SetTargetProperty(rise, new PropertyPath(TranslateTransform.YProperty));
+            Storyboard.SetTarget(rise, group.RenderTransform);
+
+            board.Children.Add(fade);
+            board.Children.Add(rise);
+
+            index++;
+            board.Begin(this, isControllable: true);
+        }
+    }
+
     private void Load()
     {
         _ready = false;
+
+        // Появление запускаем по событию Loaded, а не здесь. В конструкторе
+        // окно ещё не показано, и анимация отыгрывает в пустоте: к моменту
+        // показа всё уже на месте, и движение не видно вовсе.
+        Loaded += (_, _) => AnimateIn();
 
         ThemeDark.IsChecked = _settings.Theme == UiTheme.Dark;
         ThemeLight.IsChecked = _settings.Theme == UiTheme.Light;
