@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Threading;
 using MacShot.Services;
 using MacShot.Settings;
+using MacShot.Themes;
 using MacShot.UI;
 
 using MacShot.Lang;
@@ -91,6 +92,10 @@ public partial class App : Application
         // Язык применяем до создания трея и окон — иначе первый кадр
         // покажется на старом языке
         I18n.Use(_settings.Language);
+
+        // С темой так же: кисти кладутся в ресурсы приложения, и окно,
+        // созданное раньше, взяло бы уже несуществующую палитру
+        Theme.Apply(_settings.Theme);
 
         _tray = new TrayIcon();
         _tray.CaptureRequested += BeginCapture;

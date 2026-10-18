@@ -6,31 +6,26 @@
         MinWidth="940" MinHeight="620"
         ResizeMode="CanResize"
         WindowStartupLocation="CenterScreen"
-        Background="#17171B"
+        Background="{DynamicResource Bg}"
         TextOptions.TextFormattingMode="Ideal"
         UseLayoutRounding="True"
         FontFamily="Segoe UI, system-ui">
 
     <Window.Resources>
 
-        <!-- ============ Палитра ============ -->
-        <SolidColorBrush x:Key="Bg"        Color="#17171B"/>
-        <SolidColorBrush x:Key="Card"      Color="#212128"/>
-        <SolidColorBrush x:Key="CardLine"  Color="#2E2E38"/>
-        <SolidColorBrush x:Key="Input"     Color="#1A1A20"/>
-        <SolidColorBrush x:Key="Text"      Color="#E9E9EF"/>
-        <SolidColorBrush x:Key="Muted"     Color="#8E8E99"/>
-        <SolidColorBrush x:Key="Accent"    Color="#4C8DFF"/>
-        <SolidColorBrush x:Key="AccentDim" Color="#2F4E86"/>
+        <!-- Палитра приходит из ресурсов приложения: её подставляет
+             Themes/Theme при старте и подменяет при переключении. Поэтому
+             здесь DynamicResource, а не StaticResource — иначе окно держало
+             бы цвета той темы, на которой было открыто. -->
 
         <Style TargetType="TextBlock">
-            <Setter Property="Foreground" Value="{StaticResource Text}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Text}"/>
             <Setter Property="FontSize" Value="13"/>
         </Style>
 
         <Style x:Key="Group" TargetType="Border">
-            <Setter Property="Background" Value="{StaticResource Card}"/>
-            <Setter Property="BorderBrush" Value="{StaticResource CardLine}"/>
+            <Setter Property="Background" Value="{DynamicResource Card}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource CardLine}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="12"/>
             <Setter Property="Padding" Value="18,16"/>
@@ -38,15 +33,15 @@
         </Style>
 
         <Style x:Key="Caption" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="{StaticResource Muted}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
             <Setter Property="FontSize" Value="11"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Margin" Value="0,0,0,8"/>
         </Style>
 
         <Style x:Key="Field" TargetType="Border">
-            <Setter Property="Background" Value="{StaticResource Input}"/>
-            <Setter Property="BorderBrush" Value="{StaticResource CardLine}"/>
+            <Setter Property="Background" Value="{DynamicResource Input}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource CardLine}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="8"/>
             <Setter Property="Padding" Value="11,7"/>
@@ -58,9 +53,9 @@
              Фон с лёгким градиентом даёт кнопке объём, а не плоскую заливку. -->
         <Style x:Key="Button" TargetType="Button">
             <Setter Property="Padding" Value="18,10"/>
-            <Setter Property="Background" Value="#2E2E3A"/>
-            <Setter Property="Foreground" Value="{StaticResource Text}"/>
-            <Setter Property="BorderBrush" Value="#3A3A48"/>
+            <Setter Property="Background" Value="{DynamicResource ButtonBg}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Text}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource ButtonBorder}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="Cursor" Value="Hand"/>
@@ -84,18 +79,18 @@
                             <Grid>
                                 <!-- Тонкая светлая линия сверху: кнопка читается
                                      как приподнятая, даже в тёмной теме -->
-                                <Border Background="#14FFFFFF" CornerRadius="8"
+                                <Border Background="{DynamicResource Gloss}" CornerRadius="8"
                                         Height="1" VerticalAlignment="Top"/>
                                 <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Grid>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="B" Property="Background" Value="#3B3B4A"/>
-                                <Setter TargetName="B" Property="BorderBrush" Value="#4A4A5C"/>
+                                <Setter TargetName="B" Property="Background" Value="{DynamicResource ButtonBgHover}"/>
+                                <Setter TargetName="B" Property="BorderBrush" Value="{DynamicResource ButtonBorderHover}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="B" Property="Background" Value="#24242E"/>
+                                <Setter TargetName="B" Property="Background" Value="{DynamicResource ButtonBgPressed}"/>
                                 <Setter Property="RenderTransform">
                                     <Setter.Value>
                                         <ScaleTransform ScaleX="0.98" ScaleY="0.98" CenterX="0.5" CenterY="0.5"/>
@@ -116,23 +111,23 @@
             <Setter Property="Padding" Value="0"/>
             <Setter Property="Width" Value="26"/>
             <Setter Property="Height" Value="26"/>
-            <Setter Property="Background" Value="#26262F"/>
-            <Setter Property="BorderBrush" Value="#33333E"/>
-            <Setter Property="Foreground" Value="{StaticResource Muted}"/>
+            <Setter Property="Background" Value="{DynamicResource Surface}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource ButtonBorder}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
             <Setter Property="FontSize" Value="12"/>
         </Style>
 
         <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource Button}">
-            <Setter Property="Foreground" Value="#FF8A8A"/>
-            <Setter Property="Background" Value="#33242B"/>
-            <Setter Property="BorderBrush" Value="#4A2E36"/>
+            <Setter Property="Foreground" Value="{DynamicResource DangerText}"/>
+            <Setter Property="Background" Value="{DynamicResource DangerBg}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource DangerBorder}"/>
         </Style>
 
         <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource Button}">
-            <Setter Property="Background" Value="#4C8DFF"/>
-            <Setter Property="Foreground" Value="#08111F"/>
+            <Setter Property="Background" Value="{DynamicResource Accent}"/>
+            <Setter Property="Foreground" Value="{DynamicResource OnAccent}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="BorderBrush" Value="#4C8DFF"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
             <Setter Property="Padding" Value="26,11"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -146,18 +141,18 @@
                                                   Opacity="0.45" Color="#1B4F9E"/>
                             </Border.Effect>
                             <Grid>
-                                <Border Background="#33FFFFFF" CornerRadius="8"
+                                <Border Background="{DynamicResource AccentGloss}" CornerRadius="8"
                                         Height="1" VerticalAlignment="Top"/>
                                 <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Grid>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="B" Property="Background" Value="#6BA1FF"/>
-                                <Setter TargetName="B" Property="BorderBrush" Value="#6BA1FF"/>
+                                <Setter TargetName="B" Property="Background" Value="{DynamicResource AccentHover}"/>
+                                <Setter TargetName="B" Property="BorderBrush" Value="{DynamicResource AccentHover}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="B" Property="Background" Value="#3D7BEA"/>
+                                <Setter TargetName="B" Property="Background" Value="{DynamicResource AccentPressed}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -167,9 +162,9 @@
 
         <!-- ============ Поле ввода ============ -->
         <Style TargetType="TextBox">
-            <Setter Property="Foreground" Value="{StaticResource Text}"/>
-            <Setter Property="CaretBrush" Value="{StaticResource Text}"/>
-            <Setter Property="SelectionBrush" Value="{StaticResource Accent}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Text}"/>
+            <Setter Property="CaretBrush" Value="{DynamicResource Text}"/>
+            <Setter Property="SelectionBrush" Value="{DynamicResource Accent}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="FontFamily" Value="Cascadia Mono, Consolas"/>
@@ -194,8 +189,8 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Thumb">
-                        <Border Background="{StaticResource Text}" CornerRadius="8"
-                                BorderBrush="#0A0A0D" BorderThickness="1"/>
+                        <Border Background="{DynamicResource Text}" CornerRadius="8"
+                                BorderBrush="{DynamicResource ControlLine}" BorderThickness="1"/>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
@@ -207,7 +202,7 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Slider">
                         <Grid VerticalAlignment="Center">
-                            <Border Height="4" CornerRadius="2" Background="#2C2C36"/>
+                            <Border Height="4" CornerRadius="2" Background="{DynamicResource TrackBg}"/>
                             <Track x:Name="PART_Track">
                                 <Track.DecreaseRepeatButton>
                                     <RepeatButton Command="Slider.DecreaseLarge" Opacity="0" Focusable="False"/>
@@ -227,7 +222,7 @@
 
         <!-- ============ Переключатель ============ -->
         <Style TargetType="CheckBox">
-            <Setter Property="Foreground" Value="{StaticResource Text}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Text}"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="Template">
@@ -235,11 +230,11 @@
                     <ControlTemplate TargetType="CheckBox">
                         <StackPanel Orientation="Horizontal" Background="Transparent">
                             <Border x:Name="Box" Width="18" Height="18" CornerRadius="5"
-                                    Background="{StaticResource Input}"
-                                    BorderBrush="#3C3C4A" BorderThickness="1.5"
+                                    Background="{DynamicResource Input}"
+                                    BorderBrush="{DynamicResource ControlLine}" BorderThickness="1.5"
                                     VerticalAlignment="Center">
                                 <Path x:Name="Check" Data="M 3,9 L 7,13 L 15,4"
-                                      Stroke="#0B1220" StrokeThickness="2.2"
+                                      Stroke="{DynamicResource OnAccent}" StrokeThickness="2.2"
                                       StrokeStartLineCap="Round" StrokeEndLineCap="Round"
                                       Visibility="Collapsed"/>
                             </Border>
@@ -247,12 +242,12 @@
                         </StackPanel>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="Box" Property="Background" Value="{StaticResource Accent}"/>
-                                <Setter TargetName="Box" Property="BorderBrush" Value="{StaticResource Accent}"/>
+                                <Setter TargetName="Box" Property="Background" Value="{DynamicResource Accent}"/>
+                                <Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource Accent}"/>
                                 <Setter TargetName="Check" Property="Visibility" Value="Visible"/>
                             </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Box" Property="BorderBrush" Value="{StaticResource Accent}"/>
+                                <Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource Accent}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -262,7 +257,7 @@
 
         <!-- ============ Переключатель-радио ============ -->
         <Style TargetType="RadioButton">
-            <Setter Property="Foreground" Value="{StaticResource Text}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Text}"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Margin" Value="0,0,0,8"/>
             <Setter Property="Template">
@@ -270,20 +265,20 @@
                     <ControlTemplate TargetType="RadioButton">
                         <StackPanel Orientation="Horizontal" Background="Transparent">
                             <Grid Width="18" Height="18" VerticalAlignment="Center">
-                                <Ellipse x:Name="Ring" Fill="{StaticResource Input}"
-                                         Stroke="#3C3C4A" StrokeThickness="1.5"/>
+                                <Ellipse x:Name="Ring" Fill="{DynamicResource Input}"
+                                         Stroke="{DynamicResource ControlLine}" StrokeThickness="1.5"/>
                                 <Ellipse x:Name="Dot" Width="8" Height="8"
-                                         Fill="{StaticResource Accent}" Visibility="Collapsed"/>
+                                         Fill="{DynamicResource Accent}" Visibility="Collapsed"/>
                             </Grid>
                             <ContentPresenter Margin="10,0,0,0" VerticalAlignment="Center"/>
                         </StackPanel>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="Dot" Property="Visibility" Value="Visible"/>
-                                <Setter TargetName="Ring" Property="Stroke" Value="{StaticResource Accent}"/>
+                                <Setter TargetName="Ring" Property="Stroke" Value="{DynamicResource Accent}"/>
                             </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Ring" Property="Stroke" Value="{StaticResource Accent}"/>
+                                <Setter TargetName="Ring" Property="Stroke" Value="{DynamicResource Accent}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -296,7 +291,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Thumb">
-                        <Border Background="#4A4A58" CornerRadius="4" Margin="3,0"/>
+                        <Border Background="{DynamicResource ScrollThumbBg}" CornerRadius="4" Margin="3,0"/>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
@@ -329,15 +324,15 @@
         <Style x:Key="Preview" TargetType="Border">
             <Setter Property="Height" Value="72"/>
             <Setter Property="CornerRadius" Value="10"/>
-            <Setter Property="BorderBrush" Value="{StaticResource CardLine}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource CardLine}"/>
             <Setter Property="BorderThickness" Value="1"/>
         </Style>
 
         <!-- ============ Выпадающий список ============ -->
         <Style TargetType="ComboBox">
-            <Setter Property="Foreground" Value="{StaticResource Text}"/>
-            <Setter Property="Background" Value="{StaticResource Input}"/>
-            <Setter Property="BorderBrush" Value="{StaticResource CardLine}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Text}"/>
+            <Setter Property="Background" Value="{DynamicResource Input}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource CardLine}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="9,6"/>
             <Setter Property="FontSize" Value="12"/>
@@ -350,8 +345,8 @@
                                           IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
                                 <ToggleButton.Template>
                                     <ControlTemplate TargetType="ToggleButton">
-                                        <Border Background="{StaticResource Input}"
-                                                BorderBrush="{StaticResource CardLine}" BorderThickness="1"
+                                        <Border Background="{DynamicResource Input}"
+                                                BorderBrush="{DynamicResource CardLine}" BorderThickness="1"
                                                 CornerRadius="8"/>
                                     </ControlTemplate>
                                 </ToggleButton.Template>
@@ -361,11 +356,11 @@
                                               ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
                                               IsHitTestVisible="False"/>
                             <Path x:Name="Arrow" HorizontalAlignment="Right" Margin="0,0,11,0"
-                                  Data="M 0,0 L 4,4 L 8,0" Stroke="{StaticResource Muted}"
+                                  Data="M 0,0 L 4,4 L 8,0" Stroke="{DynamicResource Muted}"
                                   StrokeThickness="1.4" VerticalAlignment="Center"/>
                             <Popup x:Name="PART_Popup" AllowsTransparency="True" Placement="Bottom"
                                    IsOpen="{TemplateBinding IsDropDownOpen}" PopupAnimation="Fade">
-                                <Border Background="#26262F" BorderBrush="{StaticResource CardLine}"
+                                <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource CardLine}"
                                         BorderThickness="1" CornerRadius="8" Margin="0,4,0,0"
                                         MinWidth="{TemplateBinding ActualWidth}" MaxHeight="260">
                                     <ScrollViewer>
@@ -376,7 +371,7 @@
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsDropDownOpen" Value="True">
-                                <Setter TargetName="Arrow" Property="Stroke" Value="{StaticResource Accent}"/>
+                                <Setter TargetName="Arrow" Property="Stroke" Value="{DynamicResource Accent}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -385,7 +380,7 @@
         </Style>
 
         <Style TargetType="ComboBoxItem">
-            <Setter Property="Foreground" Value="{StaticResource Text}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Text}"/>
             <Setter Property="Padding" Value="11,7"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
@@ -396,7 +391,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsHighlighted" Value="True">
-                                <Setter TargetName="B" Property="Background" Value="{StaticResource AccentDim}"/>
+                                <Setter TargetName="B" Property="Background" Value="{DynamicResource AccentDim}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -405,6 +400,11 @@
         </Style>
 
         <!-- ============ Квадрат позиции на рамке кадра ============ -->
+        <!-- Квадрат лежит поверх фона кадра, а тот выбирает пользователь:
+             заранее неизвестно, светлый он или тёмный. Поэтому рамка
+             двойная — тёмная снаружи и светлая внутри. Одна линия не
+             справляется: тёмная тонет на тёмном фоне, светлая — на
+             светлом, а квадрат должен читаться на обоих. -->
         <Style x:Key="Spot" TargetType="RadioButton">
             <Setter Property="Width" Value="24"/>
             <Setter Property="Height" Value="24"/>
@@ -412,17 +412,23 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="RadioButton">
-                        <Border x:Name="B" Background="#26262F" CornerRadius="4"
-                                BorderBrush="#3C3C4A" BorderThickness="1">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
+                        <Grid>
+                            <Border x:Name="Halo" CornerRadius="5"
+                                    BorderBrush="{DynamicResource SpotHalo}" BorderThickness="2"/>
+                            <Border x:Name="B" Margin="1" CornerRadius="3.5"
+                                    Background="{DynamicResource SpotFill}"
+                                    BorderBrush="{DynamicResource SpotLine}" BorderThickness="1.5">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="B" Property="Background" Value="{StaticResource Accent}"/>
-                                <Setter TargetName="B" Property="BorderBrush" Value="{StaticResource Accent}"/>
+                                <Setter TargetName="B" Property="Background" Value="{DynamicResource Accent}"/>
+                                <Setter TargetName="B" Property="BorderBrush" Value="{DynamicResource Accent}"/>
+                                <Setter TargetName="Halo" Property="BorderBrush" Value="{DynamicResource Accent}"/>
                             </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="B" Property="BorderBrush" Value="{StaticResource Accent}"/>
+                                <Setter TargetName="B" Property="BorderBrush" Value="{DynamicResource Accent}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -453,7 +459,7 @@
             </Grid.RowDefinitions>
 
             <Border Grid.Row="0" CornerRadius="12" ClipToBounds="True"
-                    BorderBrush="{StaticResource CardLine}" BorderThickness="1"
+                    BorderBrush="{DynamicResource CardLine}" BorderThickness="1"
                     MaxHeight="430" VerticalAlignment="Top">
                 <Border x:Name="WatermarkPreview"/>
             </Border>
@@ -474,7 +480,7 @@
 
                     <!-- Редактор выбранного элемента -->
                     <StackPanel x:Name="MarkEditor" Margin="0,18,0,0" Visibility="Collapsed">
-                        <Border Height="1" Background="{StaticResource CardLine}" Margin="0,0,0,16"/>
+                        <Border Height="1" Background="{DynamicResource CardLine}" Margin="0,0,0,16"/>
 
                         <TextBlock x:Name="MarkKindLabel" Style="{StaticResource Caption}"/>
 
@@ -513,7 +519,7 @@
                             <Border Grid.Column="2" x:Name="MarkColorSwatch"
                                     Width="40" Height="36" CornerRadius="8"
                                     Background="#FFFFFF" Cursor="Hand"
-                                    BorderBrush="{StaticResource CardLine}" BorderThickness="1"
+                                    BorderBrush="{DynamicResource CardLine}" BorderThickness="1"
                                     ToolTip="{x:Static local:L.PaletteTip}"
                                     MouseLeftButtonUp="OnPickMarkColor"/>
                         </Grid>
@@ -557,7 +563,7 @@
                                     <Border Grid.Column="2" x:Name="ShadowColorSwatch"
                                             Width="40" Height="36" CornerRadius="8"
                                             Background="#000000" Cursor="Hand"
-                                            BorderBrush="{StaticResource CardLine}" BorderThickness="1"
+                                            BorderBrush="{DynamicResource CardLine}" BorderThickness="1"
                                             ToolTip="{x:Static local:L.PaletteTip}"
                                             MouseLeftButtonUp="OnPickShadowColor"/>
                                 </Grid>
@@ -613,7 +619,7 @@
                                 <Border Grid.Column="2" x:Name="SolidSwatch"
                                         Width="40" Height="36" CornerRadius="8"
                                         Background="#E9EDF5" Cursor="Hand"
-                                        BorderBrush="{StaticResource CardLine}" BorderThickness="1"
+                                        BorderBrush="{DynamicResource CardLine}" BorderThickness="1"
                                         ToolTip="{x:Static local:L.PaletteTip}"
                                         MouseLeftButtonUp="OnPickSolid"/>
                             </Grid>
@@ -641,7 +647,7 @@
                                         <Border Grid.Column="2" x:Name="GradientStartSwatch"
                                                 Width="40" Height="36" CornerRadius="8"
                                                 Background="#E9EDF5" Cursor="Hand"
-                                                BorderBrush="{StaticResource CardLine}" BorderThickness="1"
+                                                BorderBrush="{DynamicResource CardLine}" BorderThickness="1"
                                                 ToolTip="{x:Static local:L.PaletteTip}"
                                                 MouseLeftButtonUp="OnPickGradientStart"/>
                                     </Grid>
@@ -661,7 +667,7 @@
                                         <Border Grid.Column="2" x:Name="GradientEndSwatch"
                                                 Width="40" Height="36" CornerRadius="8"
                                                 Background="#C3CDE0" Cursor="Hand"
-                                                BorderBrush="{StaticResource CardLine}" BorderThickness="1"
+                                                BorderBrush="{DynamicResource CardLine}" BorderThickness="1"
                                                 ToolTip="{x:Static local:L.PaletteTip}"
                                                 MouseLeftButtonUp="OnPickGradientEnd"/>
                                     </Grid>
@@ -792,8 +798,22 @@
                     </StackPanel>
                 </Border>
 
-                <!-- Язык — в самом низу: он меняется редко, а место в начале
-                     колонки занимают настройки, которые правят каждый раз -->
+                <!-- Оформление и язык — в самом низу: они меняются редко, а
+                     место в начале колонки занимают настройки, которые правят
+                     каждый раз -->
+                <Border Style="{StaticResource Group}">
+                    <StackPanel>
+                        <TextBlock Text="{x:Static local:L.Theme}"
+                                   Style="{StaticResource Caption}"/>
+                        <RadioButton x:Name="ThemeDark" GroupName="Theme"
+                                     Content="{x:Static local:L.ThemeDark}"
+                                     Checked="OnThemeChanged" Cursor="Hand"/>
+                        <RadioButton x:Name="ThemeLight" GroupName="Theme" Margin="0"
+                                     Content="{x:Static local:L.ThemeLight}"
+                                     Checked="OnThemeChanged" Cursor="Hand"/>
+                    </StackPanel>
+                </Border>
+
                 <Border Style="{StaticResource Group}">
                     <StackPanel>
                         <TextBlock Text="{x:Static local:L.Language}" x:Name="LangCaption"
@@ -817,7 +837,7 @@
                             <Hyperlink NavigateUri="https://github.com/wintence/MacShot"
                                        RequestNavigate="OnOpenLink">
                                 <TextBlock Text="{x:Static local:L.Repository}"
-                                           Foreground="{StaticResource Accent}"
+                                           Foreground="{DynamicResource Accent}"
                                            FontSize="12" TextDecorations="Underline"/>
                             </Hyperlink>
                         </TextBlock>

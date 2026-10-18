@@ -2,6 +2,7 @@
 using System.Windows;
 using System.Windows.Input;
 using MacShot.Services;
+using MacShot.Themes;
 
 using MacShot.Lang;
 
@@ -30,7 +31,9 @@ public sealed class HotKeyDialog : Window
         SizeToContent = SizeToContent.Height;
         ResizeMode = ResizeMode.NoResize;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
-        Background = new SolidColorBrush(Color.FromRgb(0x17, 0x17, 0x1B));
+        // Диалог создаётся заново на каждый вызов, поэтому цвета читаются
+        // один раз — и те, какая тема выбрана сейчас
+        Background = Theme.Palette.Of("Bg");
         FontFamily = new FontFamily("Segoe UI, system-ui");
 
         var root = new StackPanel { Margin = new Thickness(24) };
@@ -40,14 +43,14 @@ public sealed class HotKeyDialog : Window
             Text = I18n.Current["hk.prompt"],
             FontSize = 15,
             FontWeight = FontWeights.SemiBold,
-            Foreground = new SolidColorBrush(Color.FromRgb(0xE9, 0xE9, 0xEF)),
+            Foreground = Theme.Palette.Of("Text"),
         });
 
         root.Children.Add(new TextBlock
         {
             Text = I18n.Current["hk.hint"],
             FontSize = 11,
-            Foreground = new SolidColorBrush(Color.FromRgb(0x8E, 0x8E, 0x99)),
+            Foreground = Theme.Palette.Of("Muted"),
             Margin = new Thickness(0, 4, 0, 14),
         });
 
@@ -59,14 +62,14 @@ public sealed class HotKeyDialog : Window
             HorizontalAlignment = HorizontalAlignment.Center,
             TextAlignment = TextAlignment.Center,
             Margin = new Thickness(0, 0, 0, 18),
-            Foreground = new SolidColorBrush(Color.FromRgb(0xE9, 0xE9, 0xEF)),
+            Foreground = Theme.Palette.Of("Text"),
         };
         // caption живёт внутри box, в root его второй раз добавлять нельзя:
         // у элемента может быть только один логический родитель
         var box = new Border
         {
-            Background = new SolidColorBrush(Color.FromRgb(0x21, 0x21, 0x28)),
-            BorderBrush = new SolidColorBrush(Color.FromRgb(0x2E, 0x2E, 0x38)),
+            Background = Theme.Palette.Of("Card"),
+            BorderBrush = Theme.Palette.Of("CardLine"),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(12),
             Padding = new Thickness(16, 14, 16, 14),
@@ -106,14 +109,9 @@ public sealed class HotKeyDialog : Window
             Margin = new Thickness(8, 0, 0, 0),
             Cursor = Cursors.Hand,
             BorderThickness = new Thickness(0),
-            Foreground = new SolidColorBrush(Color.FromRgb(0x0B, 0x12, 0x20)),
-            Background = new SolidColorBrush(flat
-                ? Color.FromRgb(0x2C, 0x2C, 0x36)
-                : Color.FromRgb(0x4C, 0x8D, 0xFF)),
+            Foreground = flat ? Theme.Palette.Of("Text") : Theme.Palette.Of("OnAccent"),
+            Background = flat ? Theme.Palette.Of("ButtonBg") : Theme.Palette.Of("Accent"),
         };
-
-        if (flat)
-            button.Foreground = new SolidColorBrush(Color.FromRgb(0xE9, 0xE9, 0xEF));
 
         return button;
     }

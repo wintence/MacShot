@@ -2,7 +2,6 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              ShutdownMode="OnExplicitShutdown">
-    <Application.Resources>
-        <SolidColorBrush x:Key="Accent" Color="#4C6EF5"/>
-    </Application.Resources>
+    <!-- Палитра интерфейса не лежит здесь: её подставляет Themes/Theme
+         при старте, а переключается перезаписью тех же ресурсов. -->
 </Application>

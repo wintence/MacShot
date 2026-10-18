@@ -16,6 +16,7 @@ Render/ShotRenderer.cs      composition: background + window + shadow
 Services/                   hotkey, clipboard, tray, autostart, logging
 UI/                         picker overlay, settings, palette, hotkey dialog
 Lang/                       interface translations
+Themes/                     light and dark palettes
 Settings/                   settings model and color parsing
 ```
 
@@ -93,6 +94,47 @@ Two windows cannot own each other until they are shown. That is why
 A WPF window may be shown with `ShowDialog()` exactly once, so the hotkey
 dialog is created fresh on every call.
 
+## Theme
+
+The two palettes live in `Themes/UiTheme.cs` as a dictionary of color keys
+rather than as properties: markup and code read the same keys, so one list
+instead of two that would drift apart on the next theme edit.
+
+`Themes/Theme.Apply` writes the brushes into `Application.Resources`, and the
+markup reads them through `{DynamicResource}`. That is what makes switching
+instant — WPF re-resolves the references in the already open window. A
+`StaticResource` would have been resolved once at parse time and the window
+would keep the colors of the theme it was opened with.
+
+Elements built in code are the exception: they have no implicit style from the
+markup, and a brush read at build time outlives the theme. They either get
+`SetResourceReference` (list rows, mock window) or are redrawn from the
+`Theme.Changed` event (mock content lines, which read the palette color).
+
+`BasedOn` stays `StaticResource` — it is resolved when the style is parsed, so
+a theme brush there would never update either.
+
+Dialogs read the palette once in the constructor: `ColorPickerWindow` and
+`HotKeyDialog` are recreated on every call and cannot outlive a theme switch.
+
+Two things that a dark-to-light switch does not fix by itself: the accent is
+noticeably darker in the light theme (`#2F6FE4` against `#4C8DFF`), because the
+same blue looks washed out on white; and the selection ring on the palette
+swatches is drawn dark on light swatches, since a white ring was invisible on
+the white ones.
+
+**The position squares in the preview are not a theme color.** They sit on the
+frame background, and that background is whatever the user picked — a theme
+cannot know whether it will be light or dark. With a single border the square
+was readable on one background and gone on the other: a light border vanished
+on a light frame, a dark one vanished on a dark frame. So the square carries
+its own double border, dark outside and light inside, identical in both
+themes. That is why `SpotFill`, `SpotLine` and `SpotHalo` are the same in
+`Dark` and `Light` — they answer to the frame, not to the theme.
+
+This needed alpha in the palette, so `ThemePalette` accepts `#AARRGGBB`
+alongside `#RRGGBB`.
+
 ## Settings
 
 Colors are written into the settings from the input fields on `TextChanged`.
@@ -101,6 +143,9 @@ were persisted, and the color reverted when the window closed.
 
 Changing the language recreates the window: strings in markup are read through
 `x:Static` at XAML parse time and cannot be refreshed in place.
+
+Switching the theme does **not** recreate the window the way switching the
+language does — the colors come from `{DynamicResource}` and update in place.
 
 Translations live in `Lang/I18n.cs` as a plain dictionary rather than in
 `.resx`: there are few strings, and XAML would need `x:Static` either way. The
@@ -188,6 +233,14 @@ dotnet publish -c Release -r win-x64 --self-contained false `
   back out)
 - `WM_HOTKEY` delivery on a real key press
 - language switching in both directions, with the choice persisted
+- theme switching in both directions on a live window: palette, cards, inputs,
+  buttons, checkboxes, sliders, scroll bar, list rows, and the mock window in
+  the preview all change without reopening it
+- both dialogs (palette, hotkey) in the light theme; the choice persisted and
+  was picked up on the next start
+- a `settings.json` written before the theme existed loads as dark
+- the preview position squares on a light and a dark frame background, in both
+  themes — all four combinations measured on screen
 
 Key presses cannot be reproduced automatically: neither `SendInput` nor
 `keybd_event` wakes a global hotkey, in this application or in a third-party

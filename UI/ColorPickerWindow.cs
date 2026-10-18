@@ -1,11 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using MacShot.Settings;
+using MacShot.Themes;
 
 using MacShot.Lang;
 
@@ -38,12 +38,18 @@ internal sealed class ColorPickerWindow : Window
         "#2A2A33", "#3A3A47", "#1C1C22",
     };
 
-    private static readonly Brush Bg = Frozen("#17171B");
-    private static readonly Brush Card = Frozen("#212128");
-    private static readonly Brush Line = Frozen("#2E2E38");
-    private static readonly Brush Text = Frozen("#E9E9EF");
-    private static readonly Brush Muted = Frozen("#8E8E99");
-    private static readonly Brush Accent = Frozen("#4C8DFF");
+    /// <summary>
+    /// Цвета берутся из темы в конструкторе: окно короткоживущее, создаётся
+    /// заново на каждый вызов, и следить за сменой темы ему не нужно.
+    /// </summary>
+    private readonly Brush _bg = Theme.Palette.Of("Bg");
+    private readonly Brush _line = Theme.Palette.Of("CardLine");
+    private readonly Brush _text = Theme.Palette.Of("Text");
+    private readonly Brush _muted = Theme.Palette.Of("Muted");
+    private readonly Brush _accent = Theme.Palette.Of("Accent");
+    private readonly Brush _onAccent = Theme.Palette.Of("OnAccent");
+    private readonly Brush _flatBg = Theme.Palette.Of("ButtonBg");
+    private readonly Brush _controlLine = Theme.Palette.Of("ControlLine");
 
     private static Brush Frozen(string hex)
     {
@@ -67,7 +73,7 @@ internal sealed class ColorPickerWindow : Window
         SizeToContent = SizeToContent.Height;
         ResizeMode = ResizeMode.NoResize;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
-        Background = Bg;
+        Background = _bg;
         FontFamily = new FontFamily("Segoe UI, system-ui");
         ShowInTaskbar = false;
 
@@ -78,7 +84,7 @@ internal sealed class ColorPickerWindow : Window
             Text = title,
             FontSize = 15,
             FontWeight = FontWeights.SemiBold,
-            Foreground = Text,
+            Foreground = _text,
             Margin = new Thickness(0, 0, 0, 4),
         });
 
@@ -86,7 +92,7 @@ internal sealed class ColorPickerWindow : Window
         {
             Text = I18n.Current["color.hint"],
             FontSize = 11,
-            Foreground = Muted,
+            Foreground = _muted,
             Margin = new Thickness(0, 0, 0, 16),
         };
         root.Children.Add(hint);
@@ -102,7 +108,7 @@ internal sealed class ColorPickerWindow : Window
 
         _preview.Height = 34;
         _preview.CornerRadius = new CornerRadius(8);
-        _preview.BorderBrush = Line;
+        _preview.BorderBrush = _line;
         _preview.BorderThickness = new Thickness(1);
         _preview.Background = Frozen(Selected);
         _preview.Margin = new Thickness(0, 0, 0, 16);
@@ -146,19 +152,21 @@ internal sealed class ColorPickerWindow : Window
             Margin = new Thickness(0, 0, 8, 8),
             CornerRadius = new CornerRadius(6),
             Background = Frozen(hex),
-            BorderBrush = dark ? Frozen("#4A4A58") : Line,
+            BorderBrush = dark ? _controlLine : _line,
             BorderThickness = new Thickness(1),
             Cursor = Cursors.Hand,
             ToolTip = hex,
         };
 
+        // Кольцо отметки контрастирует с самим свотчем: белое на белом в
+        // светлой теме было бы не видно совсем
         var mark = new Border
         {
             Width = 12,
             Height = 12,
             CornerRadius = new CornerRadius(6),
             BorderThickness = new Thickness(2),
-            BorderBrush = Frozen("#FFFFFF"),
+            BorderBrush = dark ? Frozen("#FFFFFF") : Frozen("#1C1F26"),
             Visibility = string.Equals(hex, Selected, StringComparison.OrdinalIgnoreCase)
                 ? Visibility.Visible
                 : Visibility.Collapsed,
@@ -201,7 +209,7 @@ internal sealed class ColorPickerWindow : Window
         _preview.Background = Frozen(Selected);
     }
 
-    private static Button MakeButton(string text, bool flat)
+    private Button MakeButton(string text, bool flat)
     {
         var button = new Button
         {
@@ -210,8 +218,8 @@ internal sealed class ColorPickerWindow : Window
             Margin = new Thickness(8, 0, 0, 0),
             Cursor = Cursors.Hand,
             BorderThickness = new Thickness(0),
-            Foreground = flat ? Text : Frozen("#0B1220"),
-            Background = flat ? Frozen("#2C2C36") : Accent,
+            Foreground = flat ? _text : _onAccent,
+            Background = flat ? _flatBg : _accent,
         };
 
         return button;

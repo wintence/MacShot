@@ -6,6 +6,7 @@ using Microsoft.Win32;
 using MacShot.Render;
 using MacShot.Services;
 using MacShot.Settings;
+using MacShot.Themes;
 
 using MacShot.Lang;
 
@@ -30,6 +31,16 @@ public partial class SettingsWindow : Window
         _tray = tray;
 
         Title = I18n.Current["set.title"];
+
+        // Макет окна и строки списков красятся кодом, и цвет они берут в
+        // момент построения. Без подписки те, что уже собраны, остались бы
+        // в цвете прежней темы до перерисовки списка.
+        Themes.Theme.Changed += OnThemeChanged;
+
+        // Окно пересоздаётся при смене языка, а событие статическое: без
+        // отписки закрытое окно висело бы в списке подписчиков до конца
+        // работы программы вместе со всем своим деревом элементов
+        Closed += (_, _) => Themes.Theme.Changed -= OnThemeChanged;
 
         Load();
     }
@@ -57,9 +68,49 @@ public partial class SettingsWindow : Window
         LanguageChanged?.Invoke();
     }
 
+    /// <summary>
+    /// Смена темы. В отличие от языка окно пересоздавать не нужно: цвета
+    /// разметки приходят через {DynamicResource} и меняются сами, а всё, что
+    /// построено кодом, перерисовывает <see cref="OnThemeChanged"/>.
+    /// </summary>
+    private void OnThemeChanged(object sender, RoutedEventArgs e)
+    {
+        if (!_ready)
+            return;
+
+        var wanted = ReferenceEquals(sender, ThemeLight) ? UiTheme.Light : UiTheme.Dark;
+
+        if (_settings.Theme == wanted)
+            return;
+
+        _settings.Theme = wanted;
+        Persist();
+
+        // Apply поднимает Changed — перерисовкой кода занимается OnThemeChanged()
+        Themes.Theme.Apply(wanted);
+    }
+
+    /// <summary>
+    /// Смена темы. Разметку красит {DynamicResource} сам, но макет окна в
+    /// предпросмотре и строки списков строятся кодом и держат цвет, взятый
+    /// при построении, — их приходится перерисовать.
+    /// </summary>
+    private void OnThemeChanged()
+    {
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            RebuildMarkList();
+            RebuildAppOverrides();
+            UpdatePreview();
+        }));
+    }
+
     private void Load()
     {
         _ready = false;
+
+        ThemeDark.IsChecked = _settings.Theme == UiTheme.Dark;
+        ThemeLight.IsChecked = _settings.Theme == UiTheme.Light;
 
         switch (_settings.Background)
         {
@@ -93,6 +144,10 @@ public partial class SettingsWindow : Window
 
         LangRu.IsChecked = _settings.Language == UiLanguage.Russian;
         LangEn.IsChecked = _settings.Language == UiLanguage.English;
+
+        // Тема применяется при старте приложения, но окно настроек можно
+        // открыть и в том же процессе повторно — на всякий случай
+        Themes.Theme.Apply(_settings.Theme);
 
         BuildPlacementSpots();
         FontBox.ItemsSource = Watermark.Fonts;
@@ -318,11 +373,14 @@ public partial class SettingsWindow : Window
 
         var window = new Border
         {
-            Background = new SolidColorBrush(Color.FromRgb(0x3A, 0x3A, 0x46)),
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
             ClipToBounds = true,
         };
+
+        // Ссылка на ресурс, а не кисть: макет переживает переключение темы,
+        // и цвет, взятый при построении, остался бы прежним
+        window.SetResourceReference(Control.BackgroundProperty, "MockWindow");
 
         var markHost = new Border
         {
@@ -436,6 +494,8 @@ public partial class SettingsWindow : Window
 
         // Строки разной длины: одинаковые читались бы как гистограмма,
         // а не как содержимое окна
+        var mockLine = (Color)((SolidColorBrush)Themes.Theme.Palette.Of("MockLine")).Color;
+
         foreach (double share in new[] { 0.92, 0.75, 0.86, 0.55 })
         {
             lines.Children.Add(new Border
@@ -446,7 +506,7 @@ public partial class SettingsWindow : Window
                 CornerRadius = new CornerRadius(3),
                 HorizontalAlignment = HorizontalAlignment.Left,
                 Background = new SolidColorBrush(Color.FromArgb(
-                    (byte)(70 * share), 0xFF, 0xFF, 0xFF)),
+                    (byte)(70 * share), mockLine.R, mockLine.G, mockLine.B)),
             });
         }
 
@@ -465,12 +525,14 @@ public partial class SettingsWindow : Window
     private static FrameworkElement BuildMockTitleBar(double height)
     {
         var bar = new Grid { Height = height };
-        bar.Children.Add(new Border
+
+        var title = new Border
         {
             CornerRadius = new CornerRadius(6),
-            Background = new SolidColorBrush(Color.FromRgb(0x4A, 0x4A, 0x59)),
             Margin = new Thickness(0, 0, 0, 12),
-        });
+        };
+        title.SetResourceReference(Control.BackgroundProperty, "MockTitle");
+        bar.Children.Add(title);
 
         // Три кружка слева — узнаваемый признак окна, как в macOS
         var dots = new StackPanel
@@ -630,19 +692,19 @@ public partial class SettingsWindow : Window
                 FontWeight = FontWeights.SemiBold,
                 Margin = new Thickness(0, 0, 11, 0),
                 VerticalAlignment = VerticalAlignment.Center,
-                Foreground = new SolidColorBrush(Color.FromRgb(0xA8, 0xC0, 0xE8)),
             };
+            ResourceLink(badge, TextBlock.ForegroundProperty, "BadgeText");
 
             var summary = new TextBlock
             {
                 Text = mark.Summary,
                 VerticalAlignment = VerticalAlignment.Center,
                 TextTrimming = TextTrimming.CharacterEllipsis,
-                // Цвет задаём явно: неявный стиль достаётся только элементам
-                // из разметки, а строки списка строятся кодом, и без этого
-                // подпись осталась бы цвета фона — то есть невидимой.
-                Foreground = Brushes.White,
             };
+            // Цвет задаём явно: неявный стиль достаётся только элементам
+            // из разметки, а строки списка строятся кодом, и без этого
+            // подпись осталась бы цвета фона — то есть невидимой.
+            ResourceLink(summary, TextBlock.ForegroundProperty, "Text");
 
             var kind = new TextBlock
             {
@@ -652,8 +714,8 @@ public partial class SettingsWindow : Window
                 FontSize = 11,
                 Margin = new Thickness(10, 0, 10, 0),
                 VerticalAlignment = VerticalAlignment.Center,
-                Foreground = new SolidColorBrush(Color.FromRgb(0xC8, 0xC8, 0xD4)),
             };
+            ResourceLink(kind, TextBlock.ForegroundProperty, "Subtle");
 
             Grid.SetColumn(badge, 0);
             Grid.SetColumn(summary, 1);
@@ -692,15 +754,26 @@ public partial class SettingsWindow : Window
 
     private static void MarkRowSelected(Border row)
     {
-        row.Background = new SolidColorBrush(Color.FromRgb(0x2A, 0x3B, 0x57));
-        row.BorderBrush = new SolidColorBrush(Color.FromRgb(0x4C, 0x8D, 0xFF));
+        ResourceLink(row, Control.BackgroundProperty, "RowSelected");
+        ResourceLink(row, Border.BorderBrushProperty, "Accent");
     }
 
     private static void MarkRowPlain(Border row)
     {
-        row.Background = new SolidColorBrush(Color.FromRgb(0x1A, 0x1A, 0x20));
-        row.BorderBrush = new SolidColorBrush(Color.FromRgb(0x2E, 0x2E, 0x38));
+        ResourceLink(row, Control.BackgroundProperty, "RowBg");
+        ResourceLink(row, Border.BorderBrushProperty, "CardLine");
     }
+
+    /// <summary>
+    /// Привязывает свойство элемента к кисти из ресурсов приложения.
+    ///
+    /// Элементы, которые окно строит кодом, не берут цвета темы сами: у них
+    /// нет неявного стиля из разметки, а кисть, прочитанная при построении,
+    /// пережила бы переключение темы. Ссылка на ресурс обновляется вместе со
+    /// всеми остальными.
+    /// </summary>
+    private static void ResourceLink(FrameworkElement target, DependencyProperty property, string key) =>
+        target.SetResourceReference(property, key);
 
     /// <summary>Клик по строке списка — выбрать элемент для правки.</summary>
     private void OnMarkRowClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
@@ -1231,9 +1304,9 @@ public partial class SettingsWindow : Window
                 Text = System.IO.Path.GetFileName(app),
                 VerticalAlignment = VerticalAlignment.Center,
                 TextTrimming = TextTrimming.CharacterEllipsis,
-                Foreground = Brushes.White,
                 ToolTip = app,
             };
+            ResourceLink(name, TextBlock.ForegroundProperty, "Text");
 
             var value = new TextBlock
             {
@@ -1242,8 +1315,8 @@ public partial class SettingsWindow : Window
                 Margin = new Thickness(8, 0, 8, 0),
                 TextAlignment = TextAlignment.Right,
                 VerticalAlignment = VerticalAlignment.Center,
-                Foreground = new SolidColorBrush(Color.FromRgb(0xC8, 0xC8, 0xD4)),
             };
+            ResourceLink(value, TextBlock.ForegroundProperty, "Subtle");
 
             // Своя настройка на весь ряд: тянуть ползунок в строке удобнее,
             // а точное значение всегда видно рядом числом.
@@ -1271,12 +1344,12 @@ public partial class SettingsWindow : Window
             var row = new Border
             {
                 CornerRadius = new CornerRadius(8),
-                Background = new SolidColorBrush(Color.FromRgb(0x1A, 0x1A, 0x20)),
-                BorderBrush = new SolidColorBrush(Color.FromRgb(0x2E, 0x2E, 0x38)),
                 BorderThickness = new Thickness(1),
                 Padding = new Thickness(11, 7, 11, 7),
                 Margin = new Thickness(0, 0, 0, 6),
             };
+            ResourceLink(row, Control.BackgroundProperty, "RowBg");
+            ResourceLink(row, Border.BorderBrushProperty, "CardLine");
 
             var content = new Grid();
             content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });

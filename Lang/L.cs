@@ -18,7 +18,7 @@ public static class L
     public static string AppName => I18n.Current["tray.app"];
 
     /// <summary>Версия программы. Показывается в заголовке окна настроек.</summary>
-    public const string Version = "1.2.1";
+    public const string Version = "1.2.2";
 
     /// <summary>Заголовок слева сверху: имя и версия в одном месте.</summary>
     public static string AppTitle => AppName + " " + Version;
@@ -28,6 +28,10 @@ public static class L
     public static string Language => I18n.Current["set.language"];
     public static string LanguageRu => I18n.Current["set.languageRu"];
     public static string LanguageEn => I18n.Current["set.languageEn"];
+
+    public static string Theme => I18n.Current["set.theme"];
+    public static string ThemeDark => I18n.Current["set.themeDark"];
+    public static string ThemeLight => I18n.Current["set.themeLight"];
 
     public static string Bg => I18n.Current["set.bg"];
     public static string BgSolid => I18n.Current["set.bgSolid"];

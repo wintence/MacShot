@@ -3,6 +3,7 @@ using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using MacShot.Services;
+using MacShot.Themes;
 
 using MacShot.Lang;
 
@@ -36,6 +37,12 @@ internal sealed class AppSettings
 /// settings.json files written earlier keep meaning Russian.
 /// </summary>
     public UiLanguage Language { get; set; } = UiLanguage.English;
+
+    /// <summary>
+    /// Оформление интерфейса. В файлах настроек, созданных до тем, ключа нет,
+    /// и разбор отдаёт сюда ноль — тёмную тему, то есть прежний вид окна.
+    /// </summary>
+    public UiTheme Theme { get; set; } = UiTheme.Dark;
 
     public BackgroundKind Background { get; set; } = BackgroundKind.Gradient;
 
@@ -116,6 +123,7 @@ internal sealed class AppSettings
     {
         HotKey = HotKey,
         Language = Language,
+        Theme = Theme,
         Background = Background,
         SolidColor = SolidColor,
         GradientStart = GradientStart,

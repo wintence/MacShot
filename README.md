@@ -42,6 +42,7 @@ Add a signature, a logo, or both — as many as you like. Everything is drawn on
 
 | Option | Default |
 |---|---|
+| Appearance | dark, light available |
 | Background | two-color gradient at an angle |
 | Padding | 40 |
 | Shadow | on: blur 36, offset down 16, density 0.45 |
@@ -54,6 +55,8 @@ Add a signature, a logo, or both — as many as you like. Everything is drawn on
 | Start when I sign in to Windows | off |
 
 The settings window shows a live preview on the left and the controls on the right, so every change is visible before you take a screenshot. The preview uses the same rendering code as the real capture — it cannot show you something different from what you get.
+
+**Appearance** switches the interface between dark and light. The change is instant — the window is not reopened, and the choice is remembered.
 
 Worth knowing:
 
