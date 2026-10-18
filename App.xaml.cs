@@ -134,7 +134,7 @@ public partial class App : Application
             var scale = Interop.Native.GetScale(target.Handle);
 
             var prepared = Render.ShotRenderer.PrepareWindow(
-                (WriteableBitmap)capture.Bitmap, settings.CornerRadius, scale);
+                (WriteableBitmap)capture.Bitmap, settings, scale);
 
             var shot = Render.ShotRenderer.Render(prepared, settings, scale);
 

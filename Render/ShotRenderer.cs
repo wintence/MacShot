@@ -239,20 +239,37 @@ internal static class ShotRenderer
     }
 
     /// <summary>
-    /// Готовит снимок окна к рендеру: копия со скруглёнными углами.
+    /// Готовит снимок окна к рендеру: срезает заголовок и скругляет углы.
     ///
     /// Замороженный (frozen) BitmapSource менять нельзя — WPF бросает
     /// InvalidOperationException. Поэтому, если исходник уже заморожен,
     /// скругление делаем на его копии.
     /// </summary>
-    public static BitmapSource PrepareWindow(BitmapSource source, double radiusDip, double scale)
+    /// <param name="source">Кадр окна в физических пикселях.</param>
+    /// <param name="settings">Настройки: радиус и, если включено, срез заголовка.</param>
+    /// <param name="scale">Масштаб DPI монитора, где снимали окно.</param>
+    public static BitmapSource PrepareWindow(BitmapSource source, AppSettings settings, double scale)
     {
         // Радиус задан в DIP, а пиксели — в физических, поэтому пересчитываем
         var working = source.IsFrozen
             ? new WriteableBitmap(source)
             : (WriteableBitmap)source;
 
-        CornerRounder.Apply(working, radiusDip * scale);
+        int crop = settings.HideTitleBar
+            ? (int)Math.Round(settings.TitleBarHeight * scale)
+            : 0;
+
+        // Сначала срез, потом скругление. Наоборот нельзя: верхние углы,
+        // которые мы скруглили бы первыми, всё равно уходят в обрез.
+        if (crop > 0)
+        {
+            working = CornerRounder.CropTop(working, crop);
+            CornerRounder.Apply(working, settings.CornerRadius * scale, topOnly: true);
+        }
+        else
+        {
+            CornerRounder.Apply(working, settings.CornerRadius * scale);
+        }
 
         working.Freeze();
         return working;

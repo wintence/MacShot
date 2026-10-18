@@ -79,6 +79,9 @@ public partial class SettingsWindow : Window
         OpacitySlider.Value = _settings.ShadowOpacity * 100;
         OffsetSlider.Value = _settings.ShadowOffsetY;
 
+        HideTitleCheck.IsChecked = _settings.HideTitleBar;
+        TitleBarSlider.Value = _settings.TitleBarHeight;
+
         SaveCheck.IsChecked = _settings.SaveToDisk;
         StartupCheck.IsChecked = _settings.RunAtStartup;
 
@@ -143,6 +146,12 @@ public partial class SettingsWindow : Window
         BlurLabel.Text = I18n.Format("set.blur", Number(BlurSlider.Value));
         OpacityLabel.Text = I18n.Format("set.opacity", Number(OpacitySlider.Value));
         OffsetLabel.Text = I18n.Format("set.offset", Number(OffsetSlider.Value));
+        TitleBarLabel.Text = I18n.Format("set.titleBarHeight", Number(TitleBarSlider.Value));
+
+        // Заголовок не срезается — высота ничего не значит
+        bool hideTitle = _settings.HideTitleBar;
+        TitleBarSlider.IsEnabled = hideTitle;
+        TitleBarLabel.Opacity = hideTitle ? 1 : 0.4;
 
         // Тень выключена — её параметры бессмысленны
         var hasShadow = _settings.ShadowEnabled;
@@ -235,9 +244,57 @@ public partial class SettingsWindow : Window
         _previewWindow.Width = NominalWidthFor(padding);
         _previewWindow.Height = NominalHeightFor(padding);
         _previewWindow.CornerRadius = new CornerRadius(_settings.CornerRadius);
-        _previewWindow.Child = BuildMockWindowContent(_previewWindow.Width, _previewWindow.Height);
+        _previewWindow.Child = BuildMockWindowContent(
+            _previewWindow.Width, _previewWindow.Height, _settings.TitleBarHeight);
+
+        ApplyMockWindowClip();
 
         RefreshPreviewMarks();
+    }
+
+    /// <summary>
+    /// Срез заголовка и скругление в предпросмотре — теми же числами, что и в
+    /// боевом рендере.
+    ///
+    /// Без этого макет врал бы: показывал рамку, которую кадр потом срежет,
+    /// и пользователь выбрал бы высоту по неверным границам.
+    /// </summary>
+    private void ApplyMockWindowClip()
+    {
+        if (_previewWindow is null)
+            return;
+
+        double width = _previewWindow.Width;
+        double height = _previewWindow.Height;
+
+        if (width <= 0 || height <= 0)
+            return;
+
+        double radius = _settings.CornerRadius;
+
+        if (!_settings.HideTitleBar)
+        {
+            var whole = new RectangleGeometry(new Rect(0, 0, width, height))
+            {
+                RadiusX = radius,
+                RadiusY = radius,
+            };
+
+            _previewWindow.Clip = whole;
+            return;
+        }
+
+        // Срез не должен съесть макет целиком
+        double top = Math.Clamp(_settings.TitleBarHeight, 0, height - 24);
+
+        // Верхние углы скруглены, нижние прямые: снизу рама уходит в тень
+        var cropped = new RectangleGeometry(new Rect(0, top, width, height - top))
+        {
+            RadiusX = radius,
+            RadiusY = radius,
+        };
+
+        _previewWindow.Clip = cropped;
     }
 
     /// <summary>
@@ -352,14 +409,18 @@ public partial class SettingsWindow : Window
     }
 
     /// <summary>Прикидка содержимого снятого окна.</summary>
-    private static FrameworkElement BuildMockWindowContent(double width, double height)
+    private static FrameworkElement BuildMockWindowContent(
+        double width, double height, double titleHeight)
     {
         var content = new Grid { Margin = new Thickness(20) };
         content.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         content.RowDefinitions.Add(new RowDefinition { Height = new GridLength(14) });
         content.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
 
-        content.Children.Add(BuildMockTitleBar());
+        // Заголовок рисуется высотой, которую срезает кадр: иначе макет и
+        // реальное окно расходились бы на всю разницу
+        content.Children.Add(BuildMockTitleBar(
+            titleHeight <= 0 ? 34 : titleHeight + 8));
 
         var lines = new StackPanel { VerticalAlignment = VerticalAlignment.Top };
 
@@ -391,9 +452,9 @@ public partial class SettingsWindow : Window
     private static double NominalHeightFor(double padding) =>
         Math.Max(160, Math.Min(760 - padding * 2, 760 - 24));
 
-    private static FrameworkElement BuildMockTitleBar()
+    private static FrameworkElement BuildMockTitleBar(double height)
     {
-        var bar = new Grid { Height = 34 };
+        var bar = new Grid { Height = height };
         bar.Children.Add(new Border
         {
             CornerRadius = new CornerRadius(6),
@@ -1305,6 +1366,27 @@ public partial class SettingsWindow : Window
             return;
 
         _settings.ShadowEnabled = ShadowCheck.IsChecked == true;
+        UpdateLabels();
+        UpdatePreview();
+        Persist();
+    }
+
+    /// <summary>
+    /// Срез заголовка снимаемого окна.
+    ///
+    /// Высота задаётся руками, а не вычисляется: у окон разная рамка, и у
+    /// Electron-приложений своя панель внутри клиентской области. Предпросмотр
+    /// показывает, сколько именно срезается, поэтому ошибиться можно только
+    /// один раз — и сразу видно.
+    /// </summary>
+    private void OnTitleBarChanged(object sender, RoutedEventArgs e)
+    {
+        if (!_ready)
+            return;
+
+        _settings.HideTitleBar = HideTitleCheck.IsChecked == true;
+        _settings.TitleBarHeight = Math.Round(TitleBarSlider.Value);
+
         UpdateLabels();
         UpdatePreview();
         Persist();

@@ -714,6 +714,16 @@
                                    Style="{StaticResource Caption}" Margin="0,16,0,6"/>
                         <Slider x:Name="OffsetSlider" Minimum="0" Maximum="60" Value="16"
                                 ValueChanged="OnValueChanged"/>
+
+                        <CheckBox x:Name="HideTitleCheck" Content="{x:Static local:L.HideTitleBar}"
+                                  IsChecked="False" Checked="OnTitleBarChanged"
+                                  Unchecked="OnTitleBarChanged" Cursor="Hand" Margin="0,18,0,0"/>
+
+                        <TextBlock x:Name="TitleBarLabel" Style="{StaticResource Caption}" Margin="0,16,0,6"/>
+                        <Slider x:Name="TitleBarSlider" Minimum="0" Maximum="120" Value="32"
+                                ValueChanged="OnTitleBarChanged"/>
+                        <TextBlock Style="{StaticResource Caption}" Margin="0,8,0,0" TextWrapping="Wrap"
+                                   Text="{x:Static local:L.HideTitleBarHint}"/>
                     </StackPanel>
                 </Border>
 

@@ -16,7 +16,11 @@ internal static class CornerRounder
     /// Прозрачными делаются только углы — остальные пиксели не трогаем,
     /// иначе кадр большого окна пришлось бы переписывать целиком.
     /// </summary>
-    public static void Apply(WriteableBitmap bitmap, double radius)
+    /// <param name="topOnly">
+    /// Скруглять только верхнюю пару углов. Нужно, когда заголовок окна
+    /// срезан: снизу рама и так уходит в тень, и скруглять её незачем.
+    /// </param>
+    public static void Apply(WriteableBitmap bitmap, double radius, bool topOnly = false)
     {
         int width = bitmap.PixelWidth;
         int height = bitmap.PixelHeight;
@@ -38,7 +42,6 @@ internal static class CornerRounder
         for (int y = 0; y < margin; y++)
         {
             int topRow = y * stride;
-            int bottomRow = (height - 1 - y) * stride;
 
             for (int x = 0; x < margin; x++)
             {
@@ -47,11 +50,21 @@ internal static class CornerRounder
                 buffer[topRow + x * 4 + 3] =
                     (byte)Coverage(x, y, width, height, r);
 
-                buffer[bottomRow + x * 4 + 3] =
-                    (byte)Coverage(x, height - 1 - y, width, height, r);
-
                 buffer[topRow + rightX * 4 + 3] =
                     (byte)Coverage(rightX, y, width, height, r);
+            }
+
+            if (topOnly)
+                continue;
+
+            int bottomRow = (height - 1 - y) * stride;
+
+            for (int x = 0; x < margin; x++)
+            {
+                int rightX = width - 1 - x;
+
+                buffer[bottomRow + x * 4 + 3] =
+                    (byte)Coverage(x, height - 1 - y, width, height, r);
 
                 buffer[bottomRow + rightX * 4 + 3] =
                     (byte)Coverage(rightX, height - 1 - y, width, height, r);
@@ -59,6 +72,27 @@ internal static class CornerRounder
         }
 
         Capture.PixelTransfer.Write(bitmap, width, height, buffer);
+    }
+
+    /// <summary>
+    /// Срезает сверху <paramref name="pixels"/> строк — заголовок окна.
+    ///
+    /// Через CroppedBitmap, а не построчно: WPF справится сам, и главное —
+    /// не придётся вручную двигать буфер, где легко оставить мусор в последней
+    /// строке кадра.
+    /// </summary>
+    public static WriteableBitmap CropTop(WriteableBitmap source, int pixels)
+    {
+        var height = source.PixelHeight;
+        var width = source.PixelWidth;
+
+        if (pixels <= 0 || pixels >= height - 1)
+            return source;
+
+        var cropped = new CroppedBitmap(
+            source, new Int32Rect(0, pixels, width, height - pixels));
+
+        return new WriteableBitmap(cropped);
     }
 
     /// <summary>

@@ -60,6 +60,21 @@ internal sealed class AppSettings
 
     public bool ShadowEnabled { get; set; } = true;
 
+    /// <summary>
+    /// Срезать заголовок снимаемого окна, оставив только содержимое.
+    /// </summary>
+    public bool HideTitleBar { get; set; }
+
+    /// <summary>
+    /// Сколько срезать сверху, DIP.
+    ///
+    /// Высота заголовка у разных окон разная и надёжно не определяется:
+    /// браузеры и Electron рисуют свою панель внутри клиентской области,
+    /// и обычный системный заголовок к ней отношения не имеет. Поэтому
+    /// значение задаётся руками, а предпросмотр показывает результат.
+    /// </summary>
+    public double TitleBarHeight { get; set; } = 32;
+
     /// <summary>Плотность тени, 0..1.</summary>
     public double ShadowOpacity { get; set; } = 0.45;
 
@@ -103,6 +118,8 @@ internal sealed class AppSettings
         Padding = Padding,
         CornerRadius = CornerRadius,
         ShadowEnabled = ShadowEnabled,
+        HideTitleBar = HideTitleBar,
+        TitleBarHeight = TitleBarHeight,
         ShadowOpacity = ShadowOpacity,
         ShadowBlur = ShadowBlur,
         ShadowOffsetY = ShadowOffsetY,
@@ -175,6 +192,7 @@ internal static class SettingsStore
         s.ShadowOpacity = Clamp(s.ShadowOpacity, 0, 1);
         s.ShadowBlur = Clamp(s.ShadowBlur, 0, 120);
         s.ShadowOffsetY = Clamp(s.ShadowOffsetY, -60, 60);
+        s.TitleBarHeight = Clamp(s.TitleBarHeight, 0, 200);
         s.GradientAngle = ((s.GradientAngle % 360) + 360) % 360;
         s.JpegQuality = (int)Clamp(s.JpegQuality, 1, 100);
 
