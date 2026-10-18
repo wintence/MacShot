@@ -45,9 +45,18 @@ where it is started from.
    ```
    gh release create v1.2.3 --repo wintence/MacShot `
      --title "MacShot 1.2.3 — …" `
-     --notes <file> `
+     --notes-file docs/RELEASING-NOTES-1.2.3.md `
      "release-full\MacShot-full.exe#MacShot-full.exe" `
      "release\MacShot-lite.exe#MacShot-lite.exe"
+   ```
+
+   `--notes-file`, not `--notes`. `--notes` takes the text itself, so
+   passing a path to it publishes the path and nothing else — the release
+   then shows a line of `C:\Users\...` where the description should be.
+   It happened once here. Check the result afterwards:
+
+   ```
+   gh release view v1.2.3 --json body
    ```
 
 ## Release notes
