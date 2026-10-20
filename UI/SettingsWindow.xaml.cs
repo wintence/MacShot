@@ -34,6 +34,10 @@ public partial class SettingsWindow : Window
 
         Title = I18n.Current["set.title"];
 
+        // Заголовок окна свой, поэтому и надпись, и иконку рисуем сами.
+        TitleText.Text = Title;
+        TitleIcon.Source = TitleBar.AppIcon();
+
         // Макет окна и строки списков красятся кодом, и цвет они берут в
         // момент построения. Без подписки те, что уже собраны, остались бы
         // в цвете прежней темы до перерисовки списка.
@@ -165,6 +169,70 @@ public partial class SettingsWindow : Window
             index++;
             board.Begin(this, isControllable: true);
         }
+    }
+
+    /// <summary>Заголовок окна: перетаскивание, двойной щелчок и кружки.</summary>
+    private void OnTitleBarDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ClickCount == 2)
+        {
+            ToggleMaximize();
+            return;
+        }
+
+        // Щелчок по кружку не должен двигать окно
+        if (FindButton(e.OriginalSource as DependencyObject) is not null)
+            return;
+
+        if (e.ButtonState == MouseButtonState.Pressed)
+        {
+            try
+            {
+                DragMove();
+            }
+            catch (InvalidOperationException)
+            {
+                // Кнопку отпустили раньше, чем перетаскивание началось
+            }
+        }
+    }
+
+    /// <summary>Кружки в заголовке: развернуть, свернуть, закрыть.</summary>
+    private void OnTrafficClick(object sender, RoutedEventArgs e)
+    {
+        switch ((sender as FrameworkElement)?.Tag as string)
+        {
+            case "Max":
+                ToggleMaximize();
+                break;
+            case "Min":
+                WindowState = WindowState.Minimized;
+                break;
+            case "Close":
+                Close();
+                break;
+        }
+    }
+
+    private void ToggleMaximize()
+    {
+        WindowState = WindowState == WindowState.Maximized
+            ? WindowState.Normal
+            : WindowState.Maximized;
+    }
+
+    /// <summary>Ищет кнопку вверх по дереву: клик по кружку не двигает окно.</summary>
+    private static System.Windows.Controls.Primitives.ButtonBase? FindButton(DependencyObject? source)
+    {
+        while (source is not null)
+        {
+            if (source is System.Windows.Controls.Primitives.ButtonBase button)
+                return button;
+
+            source = VisualTreeHelper.GetParent(source);
+        }
+
+        return null;
     }
 
     private void Load()
@@ -814,7 +882,6 @@ public partial class SettingsWindow : Window
             MarkList.Children.Add(row);
         }
 
-        MarkEmptyHint.Visibility = marks.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         MarkEditor.Visibility = Selected is null ? Visibility.Collapsed : Visibility.Visible;
     }
 
@@ -1377,8 +1444,8 @@ public partial class SettingsWindow : Window
             var value = new TextBlock
             {
                 Text = Number(height),
-                Width = 34,
-                Margin = new Thickness(8, 0, 8, 0),
+                Width = 30,
+                Margin = new Thickness(6, 0, 6, 0),
                 TextAlignment = TextAlignment.Right,
                 VerticalAlignment = VerticalAlignment.Center,
             };
@@ -1391,7 +1458,7 @@ public partial class SettingsWindow : Window
             {
                 Minimum = 0,
                 Maximum = 160,
-                Width = 130,
+                Width = 100,
                 VerticalAlignment = VerticalAlignment.Center,
                 Value = height,
                 Tag = app,

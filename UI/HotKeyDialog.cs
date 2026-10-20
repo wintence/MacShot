@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Shell;
 using MacShot.Services;
 using MacShot.Themes;
 
@@ -36,9 +37,29 @@ public sealed class HotKeyDialog : Window
         Background = Theme.Palette.Of("Bg");
         FontFamily = new FontFamily("Segoe UI, system-ui");
 
-        var root = new StackPanel { Margin = new Thickness(24) };
+        // Свой заголовок вместо системного: иначе у тёмного окна остаётся
+        // светлая полоса, и она спорит с окном настроек.
+        WindowStyle = WindowStyle.None;
+        WindowChrome.SetWindowChrome(this, new WindowChrome
+        {
+            CaptionHeight = 0,
+            GlassFrameThickness = new Thickness(0),
+            ResizeBorderThickness = new Thickness(0),
+            CornerRadius = new CornerRadius(0),
+            UseAeroCaptionButtons = false,
+        });
 
-        root.Children.Add(new TextBlock
+        var root = new Grid();
+        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+        var titleBar = TitleBar.Build(this, Title);
+        Grid.SetRow(titleBar, 0);
+        root.Children.Add(titleBar);
+
+        var content = new StackPanel { Margin = new Thickness(24, 18, 24, 24) };
+
+        content.Children.Add(new TextBlock
         {
             Text = I18n.Current["hk.prompt"],
             FontSize = 15,
@@ -46,7 +67,7 @@ public sealed class HotKeyDialog : Window
             Foreground = Theme.Palette.Of("Text"),
         });
 
-        root.Children.Add(new TextBlock
+        content.Children.Add(new TextBlock
         {
             Text = I18n.Current["hk.hint"],
             FontSize = 11,
@@ -75,8 +96,7 @@ public sealed class HotKeyDialog : Window
             Padding = new Thickness(16, 14, 16, 14),
             Child = _caption,
         };
-        root.Children.Add(box);
-
+        content.Children.Add(box);
         var buttons = new StackPanel
         {
             Orientation = Orientation.Horizontal,
@@ -93,7 +113,10 @@ public sealed class HotKeyDialog : Window
 
         buttons.Children.Add(cancel);
         buttons.Children.Add(ok);
-        root.Children.Add(buttons);
+        content.Children.Add(buttons);
+
+        Grid.SetRow(content, 1);
+        root.Children.Add(content);
 
         Content = root;
 

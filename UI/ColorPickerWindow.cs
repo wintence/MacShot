@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Shell;
 using MacShot.Settings;
 using MacShot.Themes;
 
@@ -74,9 +75,29 @@ internal sealed class ColorPickerWindow : Window
         FontFamily = new FontFamily("Segoe UI, system-ui");
         ShowInTaskbar = false;
 
-        var root = new StackPanel { Margin = new Thickness(20) };
+        // Свой заголовок вместо системного: иначе у тёмного окна остаётся
+        // светлая полоса, и она спорит с окном настроек.
+        WindowStyle = WindowStyle.None;
+        WindowChrome.SetWindowChrome(this, new WindowChrome
+        {
+            CaptionHeight = 0,
+            GlassFrameThickness = new Thickness(0),
+            ResizeBorderThickness = new Thickness(0),
+            CornerRadius = new CornerRadius(0),
+            UseAeroCaptionButtons = false,
+        });
 
-        root.Children.Add(new TextBlock
+        var root = new Grid();
+        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+        var titleBar = TitleBar.Build(this, title);
+        Grid.SetRow(titleBar, 0);
+        root.Children.Add(titleBar);
+
+        var content = new StackPanel { Margin = new Thickness(20, 16, 20, 20) };
+
+        content.Children.Add(new TextBlock
         {
             Text = title,
             FontSize = 15,
@@ -92,16 +113,16 @@ internal sealed class ColorPickerWindow : Window
             Foreground = _muted,
             Margin = new Thickness(0, 0, 0, 16),
         };
-        root.Children.Add(hint);
+        content.Children.Add(hint);
 
         // --- Палитра ---
         var grid = new WrapPanel { Orientation = Orientation.Horizontal };
         foreach (var hex in Palette)
             grid.Children.Add(MakeSwatch(hex));
-        root.Children.Add(grid);
+        content.Children.Add(grid);
 
         // --- Текущий цвет и кнопки ---
-        root.Children.Add(new Separator { Margin = new Thickness(0, 18, 0, 16) });
+        content.Children.Add(new Separator { Margin = new Thickness(0, 18, 0, 16) });
 
         _preview.Height = 34;
         _preview.CornerRadius = new CornerRadius(8);
@@ -109,7 +130,7 @@ internal sealed class ColorPickerWindow : Window
         _preview.BorderThickness = new Thickness(1);
         _preview.Background = Frozen(Selected);
         _preview.Margin = new Thickness(0, 0, 0, 16);
-        root.Children.Add(_preview);
+        content.Children.Add(_preview);
 
         var buttons = new StackPanel
         {
@@ -130,7 +151,10 @@ internal sealed class ColorPickerWindow : Window
         buttons.Children.Add(cancel);
         buttons.Children.Add(custom);
         buttons.Children.Add(ok);
-        root.Children.Add(buttons);
+        content.Children.Add(buttons);
+
+        Grid.SetRow(content, 1);
+        root.Children.Add(content);
 
         Content = root;
     }

@@ -1,4 +1,4 @@
-namespace MacShot.Themes;
+﻿namespace MacShot.Themes;
 
 /// <summary>
 /// Применённая тема оформления.

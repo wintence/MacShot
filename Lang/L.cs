@@ -50,9 +50,7 @@ public static class L
     public static string SetHotKey => I18n.Current["set.setHotkey"];
     public static string Storage => I18n.Current["set.storage"];
     public static string SaveCopy => I18n.Current["set.saveCopy"];
-    public static string SaveHint => I18n.Current["set.saveHint"];
     public static string Startup => I18n.Current["set.startup"];
-    public static string StartupHint => I18n.Current["set.startupHint"];
     public static string HideTitleBar => I18n.Current["set.hideTitleBar"];
     public static string HideTitleBarHint => I18n.Current["set.hideTitleBarHint"];
     public static string TitleAuto => I18n.Current["set.titleAuto"];
@@ -61,7 +59,6 @@ public static class L
     public static string AddApp => I18n.Current["set.addApp"];
     public static string PerAppEmpty => I18n.Current["set.perAppEmpty"];
 
-    public static string Watermark => I18n.Current["set.watermark"];
     public static string AddText => I18n.Current["set.addText"];
     public static string AddPicture => I18n.Current["set.addPicture"];
     public static string PickPicture => I18n.Current["set.pickPicture"];
@@ -72,7 +69,6 @@ public static class L
     public static string Bold => I18n.Current["set.bold"];
     public static string Italic => I18n.Current["set.italic"];
     public static string Preview => I18n.Current["set.preview"];
-    public static string MarkEmpty => I18n.Current["set.markEmpty"];
     public static string HideSettings => I18n.Current["set.hideSettings"];
     public static string ShowSettings => I18n.Current["set.showSettings"];
     public static string Repository => I18n.Current["set.repository"];

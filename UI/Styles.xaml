@@ -52,7 +52,11 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Grid>
+                    <Grid x:Name="Root" RenderTransformOrigin="0.5,0.5">
+                        <Grid.RenderTransform>
+                            <ScaleTransform x:Name="S" ScaleX="1" ScaleY="1"/>
+                        </Grid.RenderTransform>
+
                         <!-- Тень вынесена на отдельный слой под кнопкой.
                              Раньше DropShadowEffect висел на том же Border,
                              внутри которого лежит содержимое: эффект и
@@ -69,25 +73,26 @@
                             </Border.Effect>
                         </Border>
 
+                        <!-- Заливка -->
+                        <Border x:Name="Fill" Background="{TemplateBinding Background}"
+                                CornerRadius="9" SnapsToDevicePixels="True"/>
+
+                        <!-- Вуаль наведения: полупрозрачный акцент поверх
+                             всей заливки. Анимируется только прозрачность.
+                             Слой лежит под рамкой, но не внутри отступов:
+                             внутри них он красил только прямоугольник вокруг
+                             надписи, и кнопка синела не вся. -->
+                        <Border x:Name="Veil" Background="{DynamicResource AccentVeil}"
+                                CornerRadius="9" Opacity="0"/>
+
+                        <!-- Рамка и содержимое -->
                         <Border x:Name="B"
-                                Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 CornerRadius="9"
-                                Padding="{TemplateBinding Padding}"
                                 SnapsToDevicePixels="True">
-                            <Grid RenderTransformOrigin="0.5,0.5">
-                                <Grid.RenderTransform>
-                                    <ScaleTransform x:Name="S" ScaleX="1" ScaleY="1"/>
-                                </Grid.RenderTransform>
-
-                                <!-- Вуаль наведения: полупрозрачный акцент поверх
-                                     заливки. Анимируется только прозрачность. -->
-                                <Border x:Name="Veil" Background="{DynamicResource AccentVeil}"
-                                        CornerRadius="9" Opacity="0"/>
-
-                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Grid>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                            Margin="{TemplateBinding Padding}"/>
                         </Border>
                     </Grid>
 
@@ -154,7 +159,7 @@
                         </EventTrigger>
 
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="B" Property="Opacity" Value="0.45"/>
+                            <Setter TargetName="Root" Property="Opacity" Value="0.45"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -227,6 +232,36 @@
 
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="B" Property="Opacity" Value="0.45"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Кружки в заголовке окна. Системный заголовок перекрасить нельзя:
+         на этой машине его перерисовывает Windhawk, и подсказка DWM
+         пропадает. Поэтому заголовок свой, и кружки тоже свои. -->
+    <Style x:Key="TrafficButton" TargetType="Button">
+        <Setter Property="Width" Value="22"/>
+        <Setter Property="Height" Value="22"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid Background="Transparent">
+                        <Ellipse x:Name="Dot" Width="12" Height="12"
+                                 Fill="{TemplateBinding Foreground}" Opacity="0.6"/>
+                    </Grid>
+
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Dot" Property="Opacity" Value="1"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Dot" Property="Opacity" Value="0.25"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
