@@ -38,6 +38,11 @@ public partial class SettingsWindow : Window
         TitleText.Text = Title;
         TitleIcon.Source = TitleBar.AppIcon();
 
+        // Метка сборки в подвале: по ней видно, какой файл запущен.
+        // Версия одна и та же, а сборка пересобирается часто, и без метки
+        // невозможно понять, обновилась программа или нет.
+        BuildStamp.Text = BuildStampText();
+
         // Макет окна и строки списков красятся кодом, и цвет они берут в
         // момент построения. Без подписки те, что уже собраны, остались бы
         // в цвете прежней темы до перерисовки списка.
@@ -233,6 +238,30 @@ public partial class SettingsWindow : Window
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Метка сборки: время файла программы.
+    ///
+    /// Время берётся у .exe, а не у сборки в памяти: в однофайловой
+    /// сборке папки рядом нет, а файл — есть, и его время меняется при
+    /// каждой пересборке.
+    /// </summary>
+    private static string BuildStampText()
+    {
+        try
+        {
+            var path = Environment.ProcessPath;
+            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+                return string.Empty;
+
+            var time = File.GetLastWriteTime(path);
+            return $"build {time:yy.MM.dd HH:mm}";
+        }
+        catch
+        {
+            return string.Empty;
+        }
     }
 
     private void Load()

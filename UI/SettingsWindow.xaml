@@ -582,6 +582,8 @@
 
                     <StackPanel Grid.Column="0" VerticalAlignment="Center">
                         <TextBlock Text="{x:Static local:L.AppTitle}" Style="{StaticResource Caption}"/>
+                        <TextBlock x:Name="BuildStamp" Style="{StaticResource Caption}"
+                                   FontSize="10" Margin="0,1,0,2"/>
                         <TextBlock>
                             <Hyperlink NavigateUri="https://github.com/wintence/MacShot"
                                        RequestNavigate="OnOpenLink">
