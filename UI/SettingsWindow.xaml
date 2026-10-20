@@ -211,17 +211,11 @@
                 </Grid>
             </ScrollViewer>
 
-            <!-- Подвал: имя, версия, метка сборки и ссылка на исходники -->
+            <!-- Подвал: имя, версия и ссылка на исходники -->
             <StackPanel Grid.Row="3" Margin="14,8,14,12">
-                <StackPanel Orientation="Horizontal">
-                    <Image x:Name="TitleIcon" Width="16" Height="16" VerticalAlignment="Center"/>
-                    <TextBlock x:Name="TitleText" Margin="7,0,0,0" FontSize="11.5"
-                               FontWeight="SemiBold" VerticalAlignment="Center"
-                               Foreground="{DynamicResource Muted}"/>
-                </StackPanel>
-                <TextBlock x:Name="BuildStamp" FontSize="10" Margin="23,1,0,0"
-                           Foreground="{DynamicResource Muted}"/>
-                <TextBlock Margin="23,3,0,0" FontSize="10.5" ToolTip="https://github.com/wintence/MacShot">
+                <TextBlock x:Name="TitleText" FontSize="11.5"
+                           FontWeight="SemiBold" Foreground="{DynamicResource Muted}"/>
+                <TextBlock Margin="0,3,0,0" FontSize="10.5" ToolTip="https://github.com/wintence/MacShot">
                     <Hyperlink NavigateUri="https://github.com/wintence/MacShot"
                                RequestNavigate="OnOpenLink">
                         <TextBlock Text="GitHub" Foreground="{DynamicResource Muted}"/>

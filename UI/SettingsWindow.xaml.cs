@@ -41,9 +41,8 @@ public partial class SettingsWindow : Window
 
         Title = I18n.Current["set.title"];
 
-        // Имя и версия живут в подвале боковой панели, иконка — рядом.
+        // Имя и версия живут в подвале боковой панели.
         TitleText.Text = L.AppTitle;
-        TitleIcon.Source = TitleBar.AppIcon();
 
         // Страницы настроек: слева выбирают раздел, справа показывается
         // только он. Словарь собирается здесь, чтобы обработчик выбора
@@ -66,11 +65,6 @@ public partial class SettingsWindow : Window
         // Окно без системной рамки: скругляем его углы средствами DWM,
         // как у обычного окна Windows 11.
         Loaded += (_, _) => Native.RoundCorners(new WindowInteropHelper(this).Handle);
-
-        // Метка сборки в подвале: по ней видно, какой файл запущен.
-        // Версия одна и та же, а сборка пересобирается часто, и без метки
-        // невозможно понять, обновилась программа или нет.
-        BuildStamp.Text = BuildStampText();
 
         // Макет окна и строки списков красятся кодом, и цвет они берут в
         // момент построения. Без подписки те, что уже собраны, остались бы
@@ -483,29 +477,6 @@ public partial class SettingsWindow : Window
         return null;
     }
 
-    /// <summary>
-    /// Метка сборки: время файла программы.
-    ///
-    /// Время берётся у .exe, а не у сборки в памяти: в однофайловой
-    /// сборке папки рядом нет, а файл — есть, и его время меняется при
-    /// каждой пересборке.
-    /// </summary>
-    private static string BuildStampText()
-    {
-        try
-        {
-            var path = Environment.ProcessPath;
-            if (string.IsNullOrEmpty(path) || !File.Exists(path))
-                return string.Empty;
-
-            var time = File.GetLastWriteTime(path);
-            return $"build {time:yy.MM.dd HH:mm}";
-        }
-        catch
-        {
-            return string.Empty;
-        }
-    }
 
     private void Load()
     {
