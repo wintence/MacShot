@@ -12,12 +12,23 @@ namespace MacShot.Render;
 /// </summary>
 internal static class ShotRenderer
 {
+    /// <summary>Высота места под подпись: воздух сверху, строка и зазор до окна.</summary>
+    internal const double CaptionSpace = 40;
+
+    /// <summary>Зазор между подписью и окном, DIP.</summary>
+    internal const double CaptionGap = 10;
+
     /// <summary>
     /// Скругляет снимок окна и собирает финальную композицию.
     /// </summary>
     /// <param name="window">Кадр окна в физических пикселях.</param>
     /// <param name="scale">Масштаб DPI монитора, где снимали окно.</param>
-    public static RenderTargetBitmap Render(BitmapSource window, AppSettings settings, double scale)
+    /// <param name="appName">
+    /// Название приложения для подписи над окном. Пусто — подписи нет,
+    /// даже если настройка включена: показывать «неизвестно» незачем.
+    /// </param>
+    public static RenderTargetBitmap Render(
+        BitmapSource window, AppSettings settings, double scale, string? appName = null)
     {
         // Работаем в DIP, а готовим растр в пикселях: так один и тот же
         // результат получается при любом масштабировании Windows.
@@ -33,47 +44,64 @@ internal static class ShotRenderer
 // это честнее, чем ползунок, который ничего не меняет.
         double radius = settings.CornerRadius;
 
+        bool caption = settings.AppNameCaption && !string.IsNullOrWhiteSpace(appName);
+
+        // Место под подпись отступа сверху не отнимает, а добавляет: при
+        // маленьком отступе подпись легла бы на окно, поэтому кадр подрастает
+        // ровно на недостающую разницу.
+        double top = caption ? Math.Max(padding, CaptionSpace) : padding;
+
         double canvasWidthDip = windowWidthDip + padding * 2;
-        double canvasHeightDip = windowHeightDip + padding * 2;
+        double canvasHeightDip = windowHeightDip + top + padding;
 
         var background = CreateBackgroundBrush(settings, canvasWidthDip, canvasHeightDip);
         var picture = CreateRoundedPicture(window, width: windowWidthDip, height: windowHeightDip, radius);
 
-        var shadowHost = new Border
+        // Окно и свечение лежат в общем слое: свечение — та же картинка,
+        // размытая и полупрозрачная, поэтому ореол повторяет её цвета,
+        // а не изображает тень одного цвета.
+        var windowLayer = new Grid
         {
-            Background = Brushes.Transparent,
-            Child = picture,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
+            Width = windowWidthDip,
+            Height = windowHeightDip,
         };
 
-        if (settings.ShadowEnabled)
-            shadowHost.Effect = CreateShadow(settings, background);
+        if (settings.GlowEnabled)
+            windowLayer.Children.Add(CreateGlow(window, settings, windowWidthDip, windowHeightDip));
 
-        var root = new Border
+        windowLayer.Children.Add(WrapInShadow(picture, settings, background));
+
+        var root = new Grid
         {
             Background = background,
             Width = canvasWidthDip,
             Height = canvasHeightDip,
-            // Именно Grid, а не Canvas: Canvas раскладывает детей по Left/Top
-            // и игнорирует выравнивание, из-за чего окно прижималось к левому
-            // верхнему углу и отступ пропадал.
-            Child = new Grid { Children = { shadowHost } },
         };
 
-        // Знак кладём поверх окна и тени, иначе надпись уходила бы под снимок.
-        // Слой берём того же размера, что и кадр: отступы водяного знака
+        root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(top) });
+        root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(windowHeightDip) });
+        root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(padding) });
+
+        // Именно Grid, а не Canvas: Canvas раскладывает детей по Left/Top
+        // и игнорирует выравнивание, из-за чего окно прижималось к левому
+        // верхнему углу и отступ пропадал.
+        Grid.SetRow(windowLayer, 1);
+        root.Children.Add(windowLayer);
+
+        if (caption)
+            root.Children.Add(BuildCaption(appName!, settings, background));
+
+        // Знак кладём поверх окна, тени и подписи, иначе надпись уходила бы
+        // под снимок. Слой того же размера, что и кадр: отступы водяного знака
         // отсчитываются от края готовой картинки, а не от края окна.
         if (settings.Watermark?.IsActive == true)
         {
             var overlay = (UIElement)WatermarkRenderer.Build(
                 settings.Watermark, canvasWidthDip, canvasHeightDip);
 
-            if (root.Child is Grid grid)
-            {
-                Panel.SetZIndex(overlay, 10);
-                grid.Children.Add(overlay);
-            }
+            Grid.SetRowSpan(overlay, 3);
+            Panel.SetZIndex(overlay, 10);
+            root.Children.Add(overlay);
         }
 
         root.Measure(new Size(canvasWidthDip, canvasHeightDip));
@@ -90,6 +118,63 @@ internal static class ShotRenderer
         target.Freeze();
 
         return target;
+    }
+
+    /// <summary>
+    /// Подпись над окном: название приложения мелким шрифтом по центру.
+    /// Цвет — светлый на тёмном фоне и тёмный на светлом, с прозрачностью:
+    /// подпись должна читаться, но не спорить с окном.
+    /// </summary>
+    private static TextBlock BuildCaption(string text, AppSettings s, Brush background)
+    {
+        var color = IsDarkBackground(s, background) ? Colors.White : Colors.Black;
+
+        var brush = new SolidColorBrush(Color.FromArgb(158, color.R, color.G, color.B));
+        brush.Freeze();
+
+        return new TextBlock
+        {
+            Text = text,
+            FontFamily = new FontFamily("Segoe UI"),
+            FontSize = 13,
+            Foreground = brush,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Bottom,
+            Margin = new Thickness(0, 0, 0, CaptionGap),
+        };
+    }
+
+    /// <summary>Размытая копия окна: из неё и получается цветной ореол.</summary>
+    private static Image CreateGlow(
+        BitmapSource window, AppSettings s, double width, double height) =>
+        new()
+        {
+            Source = window,
+            Width = width,
+            Height = height,
+            Stretch = Stretch.Fill,
+            Opacity = s.GlowOpacity,
+            Effect = new BlurEffect
+            {
+                Radius = Math.Max(1, s.GlowBlur),
+                RenderingBias = RenderingBias.Quality,
+            },
+        };
+
+    /// <summary>
+    /// Тень живёт на отдельной обёртке, а не на самом окне: эффект и клип на
+    /// одном элементе WPF считает через промежуточный растр, и края снимка
+    /// теряли по пикселю.
+    /// </summary>
+    private static FrameworkElement WrapInShadow(
+        FrameworkElement picture, AppSettings s, Brush background)
+    {
+        var host = new Border { Child = picture };
+
+        if (s.ShadowEnabled)
+            host.Effect = CreateShadow(s, background);
+
+        return host;
     }
 
     /// <summary>
@@ -118,13 +203,16 @@ internal static class ShotRenderer
     }
 
     /// <summary>
-    /// Тень. Цвет подбирается по фону: на тёмном фоне чёрная тень
-    /// не читается и окно как бы приклеивается к подложке, поэтому
-    /// там тень светлая, а на светлом — тёмная, как в macOS.
+    /// Тень. Цвет либо задан пользователем, либо подбирается по фону: на
+    /// тёмном фоне чёрная тень не читается и окно как бы приклеивается
+    /// к подложке, поэтому там тень светлая, а на светлом — тёмная,
+    /// как в macOS.
     /// </summary>
     private static Effect CreateShadow(AppSettings s, Brush background)
     {
-        bool dark = IsDarkBackground(s, background);
+        Color color = string.IsNullOrWhiteSpace(s.ShadowColor)
+            ? (IsDarkBackground(s, background) ? Colors.White : Colors.Black)
+            : ColorUtil.Parse(s.ShadowColor, "#000000");
 
         return new DropShadowEffect
         {
@@ -135,7 +223,7 @@ internal static class ShotRenderer
             // а под окном оставалась 230 (тени не было). При 270 наоборот.
             Direction = 270,
             Opacity = s.ShadowOpacity,
-            Color = dark ? Colors.White : Colors.Black,
+            Color = color,
             RenderingBias = RenderingBias.Quality,
         };
     }
@@ -145,7 +233,7 @@ internal static class ShotRenderer
     /// по их собственным цветам, для картинки — по верхнему левому пикселю
     /// (обои обычно однотонные по краю).
     /// </summary>
-    private static bool IsDarkBackground(AppSettings s, Brush background)
+    internal static bool IsDarkBackground(AppSettings s, Brush background)
     {
         switch (s.Background)
         {

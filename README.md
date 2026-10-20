@@ -46,6 +46,9 @@ Add a signature, a logo, or both — as many as you like. Everything is drawn on
 | Background | two-color gradient at an angle |
 | Padding | 40 |
 | Shadow | on: blur 36, offset down 16, density 0.45 |
+| Shadow color | automatic by the background, any color available |
+| Glow | off: the window's own colors, blurred behind it |
+| Application name | on: a small label centered above the window |
 | Background color | palette of 29 swatches plus the system color dialog |
 | Watermark | off |
 | Hide the window title bar | off, height detected per window, overridable per app |
@@ -60,9 +63,11 @@ The settings window shows a live preview on the left and the controls on the rig
 
 Worth knowing:
 
-- **The shadow adapts on its own.** On a dark background it turns light, on a light one it turns dark. Otherwise the window either sticks to the backdrop or disappears into it.
+- **The shadow adapts on its own.** On a dark background it turns light, on a light one it turns dark. Otherwise the window either sticks to the backdrop or disappears into it. Pick a color to pin it instead — the palette is in the same card.
+- **Glow is the window itself, blurred.** The finished frame is drawn again behind the window, softly blurred, so the halo picks up the colors of what you captured rather than looking like a gray smear. Its reach grows with blur and density.
+- **The caption is the application's name**, taken from the file description of the `.exe` — so "Telegram Desktop", not "telegram.exe". A window that does not report one gets no caption.
 - **Corner radius is not configurable** — it is fixed, like on macOS.
-- **Padding is exactly what you set.** At small values the shadow gets cut off by the frame edge.
+- **Padding is exactly what you set.** At small values the shadow and the glow get cut off by the frame edge.
 - **Watermark margins are measured from the frame edge**, not from the window. With a text in a corner the margin therefore decides whether the signature lands on the backdrop or on the window itself.
 
 ## Installation

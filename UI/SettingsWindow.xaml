@@ -265,7 +265,8 @@
 
                 <!-- ===== Страницы настроек ===== -->
                 <ScrollViewer Grid.Column="2" x:Name="SettingsScroll"
-                              VerticalScrollBarVisibility="Auto">
+                              VerticalScrollBarVisibility="Auto"
+                              PreviewMouseWheel="OnSettingsWheel">
                     <Grid>
 
                         <!-- Фон -->
@@ -428,6 +429,51 @@
                                         <Slider x:Name="OffsetSlider" Minimum="0" Maximum="60" Value="16"
                                                 ValueChanged="OnValueChanged"/>
                                     </StackPanel>
+
+                                    <!-- Цвет тени: по умолчанию подбирается по фону,
+                                         «Авто» возвращает этот подбор -->
+                                    <Grid Margin="14,0,14,14">
+                                        <TextBlock x:Name="ShadowColorLabel" Style="{StaticResource RowLabel}"
+                                                   VerticalAlignment="Center"/>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"
+                                                    VerticalAlignment="Center">
+                                            <Button x:Name="ShadowColorAuto" Content="{x:Static local:L.Auto}"
+                                                    Style="{StaticResource LinkButton}"
+                                                    Foreground="{DynamicResource Muted}"
+                                                    FontSize="11" FontWeight="Normal" Padding="6,3"
+                                                    Margin="0,0,8,0" Click="OnAutoShadowColor"/>
+                                            <Border x:Name="ShadowSwatch" Width="40" Height="26"
+                                                    CornerRadius="7" Background="#000000" Cursor="Hand"
+                                                    BorderBrush="{DynamicResource CardLine}" BorderThickness="1"
+                                                    ToolTip="{x:Static local:L.PaletteTip}"
+                                                    MouseLeftButtonUp="OnPickWindowShadowColor"/>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <Border Style="{StaticResource Hair}"/>
+
+                                    <CheckBox x:Name="GlowCheck" Content="{x:Static local:L.Glow}"
+                                              Checked="OnGlowChanged" Unchecked="OnGlowChanged"
+                                              Margin="14,2,14,2"/>
+
+                                    <StackPanel Margin="14,2,14,12">
+                                        <TextBlock x:Name="GlowBlurLabel" Style="{StaticResource RowLabel}"
+                                                   Margin="0,6,0,8"/>
+                                        <Slider x:Name="GlowBlurSlider" Minimum="0" Maximum="120" Value="48"
+                                                ValueChanged="OnValueChanged"/>
+                                        <TextBlock x:Name="GlowOpacityLabel" Style="{StaticResource RowLabel}"
+                                                   Margin="0,12,0,8"/>
+                                        <Slider x:Name="GlowOpacitySlider" Minimum="0" Maximum="100" Value="60"
+                                                ValueChanged="OnValueChanged"/>
+                                    </StackPanel>
+
+                                    <Border Style="{StaticResource Hair}"/>
+
+                                    <CheckBox x:Name="AppNameCheck" Content="{x:Static local:L.AppNameCaption}"
+                                              Checked="OnAppNameChanged" Unchecked="OnAppNameChanged"
+                                              Margin="14,2,14,2"/>
+                                    <TextBlock Style="{StaticResource Hint}" Margin="14,0,14,12"
+                                               Text="{x:Static local:L.AppNameHint}"/>
                                 </StackPanel>
                             </Border>
 

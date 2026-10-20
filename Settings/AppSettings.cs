@@ -98,6 +98,34 @@ internal sealed class AppSettings
     /// <summary>Смещение тени вниз, DIP.</summary>
     public double ShadowOffsetY { get; set; } = 16;
 
+    /// <summary>
+    /// Свой цвет тени. Пустая строка — авто: на тёмном фоне тень светлая,
+    /// на светлом тёмная, иначе она сливается с подложкой.
+    /// </summary>
+    public string ShadowColor { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Свечение: размытая копия окна позади него. Цвет берётся из самого
+    /// снимка, поэтому ореол подхватывает краски окна, а не только его контур.
+    /// </summary>
+    public bool GlowEnabled { get; set; }
+
+    /// <summary>Размытие свечения, DIP.</summary>
+    public double GlowBlur { get; set; } = 48;
+
+    /// <summary>Плотность свечения, 0..1.</summary>
+    public double GlowOpacity { get; set; } = 0.6;
+
+    /// <summary>Подпись с названием приложения над окном.</summary>
+    public bool AppNameCaption { get; set; } = true;
+
+    /// <summary>
+    /// Название приложения с последнего снимка. Не сохраняется: это подсказка
+    /// для предпросмотра, чтобы он показывал ту же подпись, что и кадр.
+    /// </summary>
+    [JsonIgnore]
+    public string LastAppName { get; set; } = string.Empty;
+
     public bool SaveToDisk { get; set; }
 
     public ImageFormat Format { get; set; } = ImageFormat.Png;
@@ -140,6 +168,12 @@ internal sealed class AppSettings
         ShadowOpacity = ShadowOpacity,
         ShadowBlur = ShadowBlur,
         ShadowOffsetY = ShadowOffsetY,
+        ShadowColor = ShadowColor,
+        GlowEnabled = GlowEnabled,
+        GlowBlur = GlowBlur,
+        GlowOpacity = GlowOpacity,
+        AppNameCaption = AppNameCaption,
+        LastAppName = LastAppName,
         SaveToDisk = SaveToDisk,
         Format = Format,
         JpegQuality = JpegQuality,
@@ -222,6 +256,11 @@ internal static class SettingsStore
         s.ShadowOpacity = Clamp(s.ShadowOpacity, 0, 1);
         s.ShadowBlur = Clamp(s.ShadowBlur, 0, 120);
         s.ShadowOffsetY = Clamp(s.ShadowOffsetY, -60, 60);
+        s.GlowBlur = Clamp(s.GlowBlur, 0, 150);
+        s.GlowOpacity = Clamp(s.GlowOpacity, 0, 1);
+        s.ShadowColor = string.IsNullOrWhiteSpace(s.ShadowColor)
+            ? string.Empty
+            : ColorUtil.Normalize(s.ShadowColor, "#000000");
         s.TitleBarHeight = Clamp(s.TitleBarHeight, 0, 200);
 
         // Старые файлы настроек ключа не содержат — без этой проверки разбор

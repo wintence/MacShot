@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Media.Effects;
 using Microsoft.Win32;
 using MacShot.Interop;
 using MacShot.Render;
@@ -508,6 +509,12 @@ public partial class SettingsWindow : Window
         OpacitySlider.Value = _settings.ShadowOpacity * 100;
         OffsetSlider.Value = _settings.ShadowOffsetY;
 
+        GlowCheck.IsChecked = _settings.GlowEnabled;
+        GlowBlurSlider.Value = _settings.GlowBlur;
+        GlowOpacitySlider.Value = _settings.GlowOpacity * 100;
+
+        AppNameCheck.IsChecked = _settings.AppNameCaption;
+
         HideTitleCheck.IsChecked = _settings.HideTitleBar;
         TitleBarSlider.Value = _settings.TitleBarHeight;
         TitleAuto.IsChecked = _settings.TitleBarMode == TitleBarMode.Auto;
@@ -588,6 +595,9 @@ public partial class SettingsWindow : Window
         BlurLabel.Text = I18n.Format("set.blur", Number(BlurSlider.Value));
         OpacityLabel.Text = I18n.Format("set.opacity", Number(OpacitySlider.Value));
         OffsetLabel.Text = I18n.Format("set.offset", Number(OffsetSlider.Value));
+        ShadowColorLabel.Text = I18n.Current["set.shadowColor"];
+        GlowBlurLabel.Text = I18n.Format("set.glowBlur", Number(GlowBlurSlider.Value));
+        GlowOpacityLabel.Text = I18n.Format("set.glowOpacity", Number(GlowOpacitySlider.Value));
         TitleBarLabel.Text = I18n.Format("set.titleBarHeight", Number(TitleBarSlider.Value));
 
         // Заголовок не срезается — высота ничего не значит
@@ -606,15 +616,51 @@ public partial class SettingsWindow : Window
         BlurSlider.IsEnabled = hasShadow;
         OpacitySlider.IsEnabled = hasShadow;
         OffsetSlider.IsEnabled = hasShadow;
+        ShadowSwatch.IsEnabled = hasShadow;
+        ShadowColorAuto.IsEnabled = hasShadow;
         BlurLabel.Opacity = hasShadow ? 1 : 0.4;
         OpacityLabel.Opacity = hasShadow ? 1 : 0.4;
         OffsetLabel.Opacity = hasShadow ? 1 : 0.4;
+        ShadowColorLabel.Opacity = hasShadow ? 1 : 0.4;
+        ShadowSwatch.Opacity = hasShadow ? 1 : 0.4;
+
+        // То же для свечения
+        var hasGlow = _settings.GlowEnabled;
+        GlowBlurSlider.IsEnabled = hasGlow;
+        GlowOpacitySlider.IsEnabled = hasGlow;
+        GlowBlurLabel.Opacity = hasGlow ? 1 : 0.4;
+        GlowOpacityLabel.Opacity = hasGlow ? 1 : 0.4;
+    }
+
+    /// <summary>
+    /// Образец цвета тени. В авторежиме он показывает то, что применит рендер:
+    /// белый на тёмном фоне и чёрный на светлом — иначе непонятно, что будет.
+    /// </summary>
+    private void UpdateShadowSwatch()
+    {
+        bool auto = string.IsNullOrWhiteSpace(_settings.ShadowColor);
+
+        var color = auto
+            ? (ShotRenderer.IsDarkBackground(_settings, CurrentBackgroundBrush())
+                ? Colors.White
+                : Colors.Black)
+            : ColorUtil.Parse(_settings.ShadowColor, "#000000");
+
+        var brush = new SolidColorBrush(color);
+        brush.Freeze();
+        ShadowSwatch.Background = brush;
+
+        // «Авто» нечего нажимать, когда уже авто: ссылка гаснет
+        ShadowColorAuto.Opacity = auto ? 0.35 : 1;
     }
 
     /// <summary>Живой образец фона — иначе цвет приходится запоминать на глаз.</summary>
     private void UpdateBackgroundPreview()
     {
         BackgroundPreview.Background = CurrentBackgroundBrush();
+
+        // Цвет тени в авторежиме зависит от фона: образец должен меняться вместе с ним
+        UpdateShadowSwatch();
     }
 
     /// <summary>
@@ -661,6 +707,15 @@ public partial class SettingsWindow : Window
     /// <summary>Контейнер макета окна — его размеры зависят от отступа в настройках.</summary>
     private Border? _previewWindow;
 
+    /// <summary>Слой окна со свечением: съезжает вниз, когда появляется подпись.</summary>
+    private Grid? _previewStage;
+
+    /// <summary>Размытая копия макета — свечение под окном.</summary>
+    private Border? _previewGlow;
+
+    /// <summary>Подпись с названием приложения над окном.</summary>
+    private TextBlock? _previewCaption;
+
     /// <summary>Контейнер слоя знаков: заменяется целиком при каждой правке.</summary>
     private Border? _previewMarkHost;
 
@@ -689,15 +744,95 @@ public partial class SettingsWindow : Window
         _previewRoot.Background = CurrentBackgroundBrush();
 
         double padding = _settings.Padding;
-        _previewWindow.Width = NominalWidthFor(padding);
-        _previewWindow.Height = NominalHeightFor(padding);
+
+        // Подпись отступа сверху не отнимает, а добавляет — тем же правилом,
+        // что и в боевом рендере, иначе предпросмотр врал бы о полях.
+        double top = _settings.AppNameCaption
+            ? Math.Max(padding, ShotRenderer.CaptionSpace)
+            : padding;
+
+        double width = NominalWidthFor(padding);
+        double height = NominalHeightFor(padding, top);
+
+        if (_previewStage is not null)
+        {
+            _previewStage.Width = width;
+            _previewStage.Height = height;
+            _previewStage.Margin = new Thickness(0, top, 0, 0);
+        }
+
+        _previewWindow.Width = width;
+        _previewWindow.Height = height;
         _previewWindow.CornerRadius = new CornerRadius(_settings.CornerRadius);
-        _previewWindow.Child = BuildMockWindowContent(
-            _previewWindow.Width, _previewWindow.Height, PreviewTitleBarDip());
+        _previewWindow.Child = BuildMockWindowContent(width, height, PreviewTitleBarDip());
 
         ApplyMockWindowClip();
+        UpdatePreviewGlow(width, height);
+        UpdatePreviewCaption(top);
 
         RefreshPreviewMarks();
+    }
+
+    /// <summary>
+    /// Свечение в предпросмотре — размытая копия того же макета. Боевой кадр
+    /// размывает сам снимок, но форма ореола от этого не меняется, а цвет
+    /// макета в предпросмотре всё равно условный.
+    /// </summary>
+    private void UpdatePreviewGlow(double width, double height)
+    {
+        if (_previewGlow is null)
+            return;
+
+        bool on = _settings.GlowEnabled;
+
+        _previewGlow.Width = width;
+        _previewGlow.Height = height;
+        _previewGlow.Visibility = on ? Visibility.Visible : Visibility.Collapsed;
+        _previewGlow.CornerRadius = new CornerRadius(_settings.CornerRadius);
+
+        if (!on)
+        {
+            // Выключено — копию незачем держать в дереве
+            _previewGlow.Child = null;
+            _previewGlow.Effect = null;
+            return;
+        }
+
+        _previewGlow.Opacity = _settings.GlowOpacity;
+        _previewGlow.Child = BuildMockWindowContent(width, height, PreviewTitleBarDip());
+        _previewGlow.Effect = new BlurEffect
+        {
+            Radius = Math.Max(1, _settings.GlowBlur),
+            RenderingBias = RenderingBias.Quality,
+        };
+    }
+
+    /// <summary>Подпись над окном в предпросмотре — тем же цветом и на том же месте.</summary>
+    private void UpdatePreviewCaption(double top)
+    {
+        if (_previewCaption is null)
+            return;
+
+        bool on = _settings.AppNameCaption;
+        _previewCaption.Visibility = on ? Visibility.Visible : Visibility.Collapsed;
+
+        if (!on)
+            return;
+
+        _previewCaption.Text = string.IsNullOrWhiteSpace(_settings.LastAppName)
+            ? L.AppName
+            : _settings.LastAppName;
+
+        _previewCaption.Margin = new Thickness(0,
+            Math.Max(0, top - ShotRenderer.CaptionGap - 18), 0, 0);
+
+        var color = ShotRenderer.IsDarkBackground(_settings, CurrentBackgroundBrush())
+            ? Colors.White
+            : Colors.Black;
+
+        var brush = new SolidColorBrush(Color.FromArgb(158, color.R, color.G, color.B));
+        brush.Freeze();
+        _previewCaption.Foreground = brush;
     }
 
     /// <summary>
@@ -765,6 +900,31 @@ public partial class SettingsWindow : Window
         // и цвет, взятый при построении, остался бы прежним
         window.SetResourceReference(Control.BackgroundProperty, "MockWindow");
 
+        // Свечение — вторая копия макета, размытая и полупрозрачная
+        var glow = new Border
+        {
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Visibility = Visibility.Collapsed,
+            IsHitTestVisible = false,
+        };
+        glow.SetResourceReference(Control.BackgroundProperty, "MockWindow");
+
+        // Окно и свечение двигаются вместе: подпись сдвигает их вниз
+        var stage = new Grid
+        {
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Top,
+            Children = { glow, window },
+        };
+
+        var caption = new TextBlock
+        {
+            FontSize = 13,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Top,
+        };
+
         var markHost = new Border
         {
             Width = NominalPreviewWidth,
@@ -782,7 +942,7 @@ public partial class SettingsWindow : Window
         {
             Width = NominalPreviewWidth,
             Height = NominalPreviewHeight,
-            Children = { window, markHost, spotHost },
+            Children = { stage, caption, markHost, spotHost },
         };
 
         // Порядок снизу вверх: макет окна, квадраты позиций, сами знаки.
@@ -797,6 +957,9 @@ public partial class SettingsWindow : Window
         root.PreviewMouseLeftButtonUp += OnPreviewMarkUp;
 
         _previewWindow = window;
+        _previewStage = stage;
+        _previewGlow = glow;
+        _previewCaption = caption;
         _previewMarkHost = markHost;
         _previewSpotHost = spotHost;
         _previewRoot = root;
@@ -902,8 +1065,8 @@ public partial class SettingsWindow : Window
     private static double NominalWidthFor(double padding) =>
         Math.Max(240, Math.Min(1200 - padding * 2, 1200 - 24));
 
-    private static double NominalHeightFor(double padding) =>
-        Math.Max(160, Math.Min(760 - padding * 2, 760 - 24));
+    private static double NominalHeightFor(double padding, double top) =>
+        Math.Max(160, Math.Min(760 - top - padding, 760 - 24));
 
     private static FrameworkElement BuildMockTitleBar(double height)
     {
@@ -1915,8 +2078,15 @@ public partial class SettingsWindow : Window
     /// сохранение и обновление предпросмотра работают одинаково.
     /// </summary>
     private void ApplyPickedColor(string titleKey, TextBox box)
+        => ApplyPickedColor(titleKey, box.Text, hex => box.Text = hex);
+
+    /// <summary>
+    /// То же для цвета, у которого нет поля ввода: начальное значение
+    /// передаётся строкой, а результат забирает обработчик.
+    /// </summary>
+    private void ApplyPickedColor(string titleKey, string current, Action<string> apply)
     {
-        var picker = new ColorPickerWindow(I18n.Current[titleKey], box.Text)
+        var picker = new ColorPickerWindow(I18n.Current[titleKey], current)
         {
             Owner = this,
         };
@@ -1924,9 +2094,7 @@ public partial class SettingsWindow : Window
         if (picker.ShowDialog() != true)
             return;
 
-        // TextChanged сам запишет значение в настройки, обновит образец,
-        // предпросмотр и сохранит файл — дублировать это здесь не нужно
-        box.Text = picker.Selected;
+        apply(picker.Selected);
     }
 
     /// <summary>
@@ -1985,6 +2153,38 @@ public partial class SettingsWindow : Window
         swatch.Background = new SolidColorBrush(ColorUtil.Parse(hex, "#E9EDF5"));
     }
 
+    /// <summary>
+    /// Колесо над ползунком крутит ползунок, а не страницу — так легко
+    /// случайно поменять настройку, просто листая карточку. Возвращаем колесу
+    /// его прямое дело: прокрутку списка.
+    /// </summary>
+    private void OnSettingsWheel(object sender, MouseWheelEventArgs e)
+    {
+        if (!IsInsideSlider(e.OriginalSource as DependencyObject))
+            return;
+
+        SettingsScroll.ScrollToVerticalOffset(
+            SettingsScroll.VerticalOffset - e.Delta * 0.6);
+
+        e.Handled = true;
+    }
+
+    private static bool IsInsideSlider(DependencyObject? source)
+    {
+        while (source is not null)
+        {
+            if (source is Slider)
+                return true;
+
+            if (source is not Visual)
+                return false;
+
+            source = VisualTreeHelper.GetParent(source);
+        }
+
+        return false;
+    }
+
     private void OnValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
         if (!_ready)
@@ -1994,6 +2194,8 @@ public partial class SettingsWindow : Window
         else if (ReferenceEquals(sender, BlurSlider)) _settings.ShadowBlur = Math.Round(e.NewValue);
         else if (ReferenceEquals(sender, OpacitySlider)) _settings.ShadowOpacity = Math.Round(e.NewValue) / 100.0;
         else if (ReferenceEquals(sender, OffsetSlider)) _settings.ShadowOffsetY = Math.Round(e.NewValue);
+        else if (ReferenceEquals(sender, GlowBlurSlider)) _settings.GlowBlur = Math.Round(e.NewValue);
+        else if (ReferenceEquals(sender, GlowOpacitySlider)) _settings.GlowOpacity = Math.Round(e.NewValue) / 100.0;
 
         UpdateLabels();
         UpdatePreview();
@@ -2007,6 +2209,60 @@ public partial class SettingsWindow : Window
 
         _settings.ShadowEnabled = ShadowCheck.IsChecked == true;
         UpdateLabels();
+        UpdatePreview();
+        Persist();
+    }
+
+    private void OnGlowChanged(object sender, RoutedEventArgs e)
+    {
+        if (!_ready)
+            return;
+
+        _settings.GlowEnabled = GlowCheck.IsChecked == true;
+        UpdateLabels();
+        UpdatePreview();
+        Persist();
+    }
+
+    private void OnAppNameChanged(object sender, RoutedEventArgs e)
+    {
+        if (!_ready)
+            return;
+
+        _settings.AppNameCaption = AppNameCheck.IsChecked == true;
+        UpdatePreview();
+        Persist();
+    }
+
+    /// <summary>
+    /// Свой цвет тени. Палитра открывается с тем цветом, который сейчас
+    /// виден на образце: в авторежиме это не «никакой», а вычисленный.
+    /// </summary>
+    private void OnPickWindowShadowColor(object sender, MouseButtonEventArgs e)
+    {
+        UpdateShadowSwatch();
+
+        string current = ShadowSwatch.Background is SolidColorBrush solid
+            ? ColorUtil.ToHex(solid.Color)
+            : "#000000";
+
+        ApplyPickedColor("color.windowShadow", current, hex =>
+        {
+            _settings.ShadowColor = hex;
+            UpdateShadowSwatch();
+            UpdatePreview();
+            Persist();
+        });
+    }
+
+    /// <summary>Возврат к подбору цвета тени по фону.</summary>
+    private void OnAutoShadowColor(object sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(_settings.ShadowColor))
+            return;
+
+        _settings.ShadowColor = string.Empty;
+        UpdateShadowSwatch();
         UpdatePreview();
         Persist();
     }

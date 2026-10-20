@@ -141,7 +141,9 @@ public partial class App : Application
             var prepared = Render.ShotRenderer.PrepareWindow(
                 (WriteableBitmap)capture.Bitmap, settings, scale, target.Handle);
 
-            var shot = Render.ShotRenderer.Render(prepared, settings, scale);
+            var shot = Render.ShotRenderer.Render(
+                prepared, settings, scale,
+                Services.CaptureController.AppNameFor(target.Handle));
 
             // Снимок получился — значит, приложение тоже попало в список
             // своих высот, ровно так же, как при съёмке по горячей клавише

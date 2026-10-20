@@ -97,7 +97,12 @@ internal sealed class CaptureController : IDisposable
         var prepared = ShotRenderer.PrepareWindow(
             (WriteableBitmap)capture.Bitmap, _settings, scale, window.Handle);
 
-        var shot = ShotRenderer.Render(prepared, _settings, scale);
+        // Имя приложения ищется до рендера: подпись над окном — часть кадра,
+        // и без имени её просто не будет.
+        string appName = AppNameFor(window.Handle);
+        _settings.LastAppName = appName;
+
+        var shot = ShotRenderer.Render(prepared, _settings, scale, appName);
 
         LastShot = shot;
 
@@ -140,6 +145,38 @@ internal sealed class CaptureController : IDisposable
             Render.ShotRenderer.MeasureTitleBar(settings, scale, hwnd);
 
         SettingsStore.Save(settings);
+    }
+
+    /// <summary>
+    /// Название приложения для подписи над окном.
+    ///
+    /// Берём описание файла, а не имя процесса: у Telegram это
+    /// «Telegram Desktop», а не «Telegram.exe». Если описания нет, годится
+    /// название продукта, и лишь в последнюю очередь — имя файла.
+    /// </summary>
+    internal static string AppNameFor(IntPtr hwnd)
+    {
+        try
+        {
+            string path = Native.GetAppPath(hwnd);
+
+            if (string.IsNullOrEmpty(path) || !System.IO.File.Exists(path))
+                return string.Empty;
+
+            var info = System.Diagnostics.FileVersionInfo.GetVersionInfo(path);
+
+            string name = info.FileDescription ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(name))
+                name = info.ProductName ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(name))
+                name = System.IO.Path.GetFileNameWithoutExtension(path);
+
+            return name.Trim();
+        }
+        catch
+        {
+            return string.Empty;
+        }
     }
 
     private string BuildStatus(string title, CaptureMethod method, bool copied, string savedPath)
