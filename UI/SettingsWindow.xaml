@@ -147,7 +147,16 @@
                                      Style="{StaticResource Nav}" Checked="OnNavChecked">
                             <StackPanel Orientation="Horizontal">
                                 <Border Width="18" Height="18" CornerRadius="4.5" Background="#3E7BFA">
-                                    <Ellipse Width="9" Height="9" Fill="#FFFFFF" Opacity="0.95"/>
+                                    <Canvas Width="18" Height="18">
+                                        <!-- Снимок: белая рамка, окно-вырез и горы -->
+                                        <Border Canvas.Left="3.5" Canvas.Top="4.5"
+                                                Width="11" Height="9" CornerRadius="2"
+                                                Background="#FFFFFF"/>
+                                        <Ellipse Canvas.Left="5.8" Canvas.Top="6.3"
+                                                 Width="2.3" Height="2.3" Fill="#3E7BFA"/>
+                                        <Path Fill="#3E7BFA"
+                                              Data="M 5.3,13.5 L 8.1,9.3 L 10.3,12.0 L 11.5,10.6 L 13.3,13.5 Z"/>
+                                    </Canvas>
                                 </Border>
                                 <TextBlock Style="{StaticResource NavText}"
                                            Text="{x:Static local:L.NavBackground}"/>
@@ -158,9 +167,14 @@
                                      Style="{StaticResource Nav}" Checked="OnNavChecked">
                             <StackPanel Orientation="Horizontal">
                                 <Border Width="18" Height="18" CornerRadius="4.5" Background="#A05CE6">
-                                    <Path Data="M 3.5,5 H 12.5 V 12 H 3.5 Z M 3.5,7.4 H 12.5"
-                                          Stroke="#FFFFFF" StrokeThickness="1.3"
-                                          StrokeLineJoin="Round"/>
+                                    <Canvas Width="18" Height="18">
+                                        <!-- Окно: рамка и полоса заголовка -->
+                                        <Border Canvas.Left="3.4" Canvas.Top="4.4"
+                                                Width="11.2" Height="9.2" CornerRadius="2.2"
+                                                BorderThickness="1.3" BorderBrush="#FFFFFF"/>
+                                        <Border Canvas.Left="4.7" Canvas.Top="7.3"
+                                                Width="8.6" Height="1.3" Background="#FFFFFF"/>
+                                    </Canvas>
                                 </Border>
                                 <TextBlock Style="{StaticResource NavText}"
                                            Text="{x:Static local:L.NavWindow}"/>
@@ -171,8 +185,8 @@
                                      Style="{StaticResource Nav}" Checked="OnNavChecked">
                             <StackPanel Orientation="Horizontal">
                                 <Border Width="18" Height="18" CornerRadius="4.5" Background="#F0A03C">
-                                    <Path Data="M 4,4.6 H 12 M 8,4.6 V 12"
-                                          Stroke="#FFFFFF" StrokeThickness="1.5"
+                                    <Path Data="M 5.1,5.4 H 12.9 M 9,5.4 V 12.9"
+                                          Stroke="#FFFFFF" StrokeThickness="1.8"
                                           StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
                                 </Border>
                                 <TextBlock Style="{StaticResource NavText}"
@@ -184,13 +198,9 @@
                                      Style="{StaticResource Nav}" Checked="OnNavChecked">
                             <StackPanel Orientation="Horizontal">
                                 <Border Width="18" Height="18" CornerRadius="4.5" Background="#6D7686">
-                                    <Canvas Width="18" Height="18">
-                                        <Path Data="M 4,6.5 H 13 M 4,11 H 13"
-                                              Stroke="#FFFFFF" StrokeThickness="1.4"
-                                              StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
-                                        <Ellipse Canvas.Left="6" Canvas.Top="5" Width="3" Height="3" Fill="#FFFFFF"/>
-                                        <Ellipse Canvas.Left="9.5" Canvas.Top="9.5" Width="3" Height="3" Fill="#FFFFFF"/>
-                                    </Canvas>
+                                    <!-- Шестерня: восемь зубьев и отверстие в центре -->
+                                    <Path Fill="#FFFFFF"
+                                          Data="F0 M 7.98,3.75 L 10.02,3.75 L 10.15,5.12 L 10.93,5.44 L 11.99,4.56 L 13.44,6.01 L 12.56,7.07 L 12.88,7.85 L 14.25,7.98 L 14.25,10.02 L 12.88,10.15 L 12.56,10.93 L 13.44,11.99 L 11.99,13.44 L 10.93,12.56 L 10.15,12.88 L 10.02,14.25 L 7.98,14.25 L 7.85,12.88 L 7.07,12.56 L 6.01,13.44 L 4.56,11.99 L 5.44,10.93 L 5.12,10.15 L 3.75,10.02 L 3.75,7.98 L 5.12,7.85 L 5.44,7.07 L 4.56,6.01 L 6.01,4.56 L 7.07,5.44 L 7.85,5.12 Z M 7.10,9.00 A 1.90,1.90 0 1 1 10.90,9.00 A 1.90,1.90 0 1 1 7.10,9.00 Z"/>
                                 </Border>
                                 <TextBlock Style="{StaticResource NavText}"
                                            Text="{x:Static local:L.NavGeneral}"/>
