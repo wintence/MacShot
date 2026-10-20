@@ -1,3 +1,5 @@
+![MacShot settings](https://raw.githubusercontent.com/wintence/MacShot/main/docs/screenshot.png)
+
 ## Settings, rebuilt
 
 The settings window now looks and behaves like macOS System Settings: sections on the left, the chosen section's controls on the right, the preview always in place.
