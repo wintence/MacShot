@@ -556,9 +556,16 @@
                             <Grid>
                                 <!-- Галочка обводится штрихом, а не появляется
                                      целиком: движение штриха заметно и приятно,
-                                     а смена видимости выглядит как щелчок. -->
-                                <Path x:Name="Check" Data="M 3,9 L 7,13 L 15,4"
-                                      Stroke="{DynamicResource OnAccent}" StrokeThickness="2.2"
+                                     а смена видимости выглядит как щелчок.
+
+                                     Обе стороны галочки идут под 45°, вершина
+                                     смещена влево, а конец длинной не доходит
+                                     до угла рамки. Раньше длинная сторона была
+                                     почти вдвое длиннее короткой и уходила
+                                     под самый угол — галочка читалась как
+                                     кривая «V», а не как галочка. -->
+                                <Path x:Name="Check" Data="M 4.6,9.6 L 7.2,12.2 L 13.6,5.8"
+                                      Stroke="{DynamicResource OnAccent}" StrokeThickness="1.9"
                                       StrokeStartLineCap="Round" StrokeEndLineCap="Round"
                                       StrokeDashArray="30" StrokeDashOffset="30"
                                       Opacity="0" RenderTransformOrigin="0.5,0.5">
