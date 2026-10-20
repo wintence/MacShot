@@ -73,7 +73,7 @@ internal sealed class TrayIcon : IDisposable
 
         _hotKeyItem.Text = string.IsNullOrWhiteSpace(gesture)
             ? I18n.Current["tray.hotkeyNone"]
-            : I18n.Format("tray.hotkey", gesture);
+            : I18n.Format("tray.hotkey", HotKeyService.Friendly(gesture));
     }
 
     /// <summary>Всплывающее уведомление — для ошибок горячей клавиши.</summary>

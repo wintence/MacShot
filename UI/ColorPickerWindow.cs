@@ -72,6 +72,7 @@ internal sealed class ColorPickerWindow : Window
         ResizeMode = ResizeMode.NoResize;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         Background = _bg;
+        Foreground = _text;
         FontFamily = new FontFamily("Segoe UI, system-ui");
         ShowInTaskbar = false;
 
@@ -95,16 +96,7 @@ internal sealed class ColorPickerWindow : Window
         Grid.SetRow(titleBar, 0);
         root.Children.Add(titleBar);
 
-        var content = new StackPanel { Margin = new Thickness(20, 16, 20, 20) };
-
-        content.Children.Add(new TextBlock
-        {
-            Text = title,
-            FontSize = 15,
-            FontWeight = FontWeights.SemiBold,
-            Foreground = _text,
-            Margin = new Thickness(0, 0, 0, 4),
-        });
+        var content = new StackPanel { Margin = new Thickness(20, 4, 20, 20) };
 
         var hint = new TextBlock
         {
@@ -122,7 +114,12 @@ internal sealed class ColorPickerWindow : Window
         content.Children.Add(grid);
 
         // --- Текущий цвет и кнопки ---
-        content.Children.Add(new Separator { Margin = new Thickness(0, 18, 0, 16) });
+        content.Children.Add(new Border
+        {
+            Height = 1,
+            Background = _line,
+            Margin = new Thickness(0, 18, 0, 16),
+        });
 
         _preview.Height = 34;
         _preview.CornerRadius = new CornerRadius(8);

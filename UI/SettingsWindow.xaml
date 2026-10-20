@@ -3,12 +3,13 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:MacShot.Lang"
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
-        Width="940" Height="700"
-        MinWidth="780" MinHeight="520"
+        Width="960" Height="600"
+        MinWidth="900" MinHeight="540"
         ResizeMode="CanResize"
         WindowStartupLocation="CenterScreen"
         WindowStyle="None"
         Background="{DynamicResource Bg}"
+        Foreground="{DynamicResource Text}"
         TextOptions.TextFormattingMode="Ideal"
         UseLayoutRounding="True"
         FontFamily="Segoe UI, system-ui">
@@ -32,44 +33,25 @@
              здесь DynamicResource, а не StaticResource — иначе окно держало
              бы цвета той темы, на которой было открыто.
 
-             Здесь только то, что принадлежит этому окну. Стили кнопок,
-             флажков и ползунков — в UI/Styles.xaml, вместе с анимациями. -->
-
-        <!-- Отступы собраны жёстко и мелко: панель настроек и так
-             прокручивается, а лишний воздух в карточках съедал высоту,
-             не давая поместиться ещё одной секции. -->
-        <Style x:Key="Group" TargetType="Border">
-            <Setter Property="Background" Value="{DynamicResource Card}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource CardLine}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="10"/>
-            <Setter Property="Padding" Value="14,11"/>
-            <Setter Property="Margin" Value="0,0,0,10"/>
-        </Style>
-
-        <Style x:Key="Caption" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
-            <Setter Property="FontSize" Value="11"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Margin" Value="0,0,0,4"/>
-        </Style>
+             Карточки, строки и ползунки — в UI/Styles.xaml, вместе с
+             анимациями. Здесь только то, что принадлежит этому окну. -->
 
         <Style x:Key="Field" TargetType="Border">
             <Setter Property="Background" Value="{DynamicResource Input}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource CardLine}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="8"/>
-            <Setter Property="Padding" Value="9,5"/>
+            <Setter Property="CornerRadius" Value="7"/>
+            <Setter Property="Padding" Value="8,5"/>
         </Style>
 
         <Style x:Key="Preview" TargetType="Border">
-            <Setter Property="Height" Value="58"/>
-            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Height" Value="52"/>
+            <Setter Property="CornerRadius" Value="8"/>
             <Setter Property="BorderBrush" Value="{DynamicResource CardLine}"/>
             <Setter Property="BorderThickness" Value="1"/>
         </Style>
 
-             <!-- ============ Квадрат позиции на рамке кадра ============ -->
+        <!-- ============ Квадрат позиции на рамке кадра ============ -->
         <!-- Квадрат лежит поверх фона кадра, а тот выбирает пользователь:
              заранее неизвестно, светлый он или тёмный. Поэтому рамка
              двойная — тёмная снаружи и светлая внутри. Одна линия не
@@ -106,500 +88,656 @@
             </Setter>
         </Style>
 
-
     </Window.Resources>
 
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="34"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="204"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
 
-        <!-- ============ Заголовок окна ============ -->
-        <Grid Grid.Row="0" x:Name="TitleStrip" Background="{DynamicResource Bg}"
-              MouseLeftButtonDown="OnTitleBarDown">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0,0,0">
-                <Image x:Name="TitleIcon" Width="16" Height="16" VerticalAlignment="Center"/>
-                <TextBlock x:Name="TitleText" VerticalAlignment="Center" Margin="8,0,0,0"
-                           FontSize="12" Foreground="{DynamicResource Muted}"/>
-            </StackPanel>
+        <!-- ============ Боковая панель ============ -->
+        <Grid Grid.Column="0" Background="{DynamicResource SidebarBg}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="46"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
 
             <!-- Кружки в том же порядке и с теми же цветами, что и системные:
-                 зелёный разворачивает, жёлтый сворачивает, красный закрывает. -->
-            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center"
-                        Margin="0,0,10,0">
-                <Button x:Name="TrafficMax" Tag="Max" Click="OnTrafficClick"
-                        Foreground="#28C840" Style="{StaticResource TrafficButton}"/>
-                <Button x:Name="TrafficMin" Tag="Min" Click="OnTrafficClick"
-                        Foreground="#FFBD2E" Style="{StaticResource TrafficButton}"/>
+                 красный закрывает, жёлтый сворачивает, зелёный разворачивает.
+                 Свободное место справа от них двигает окно. -->
+            <StackPanel Grid.Row="0" Orientation="Horizontal" VerticalAlignment="Center"
+                        Margin="14,0,0,0" Background="Transparent"
+                        MouseLeftButtonDown="OnTitleBarDown">
                 <Button x:Name="TrafficClose" Tag="Close" Click="OnTrafficClick"
                         Foreground="#FF5F57" Style="{StaticResource TrafficButton}"/>
+                <Button x:Name="TrafficMin" Tag="Min" Click="OnTrafficClick"
+                        Foreground="#FFBD2E" Style="{StaticResource TrafficButton}"/>
+                <Button x:Name="TrafficMax" Tag="Max" Click="OnTrafficClick"
+                        Foreground="#28C840" Style="{StaticResource TrafficButton}"
+                        Margin="0,0,0,0"/>
+            </StackPanel>
+
+            <!-- Поиск по настройкам -->
+            <Grid Grid.Row="1" Height="28" Margin="12,2,12,10">
+                <Border Background="{DynamicResource SearchBg}" CornerRadius="7"/>
+                <Canvas Width="14" Height="14" HorizontalAlignment="Left" VerticalAlignment="Center"
+                        Margin="9,0,0,0" IsHitTestVisible="False">
+                    <Ellipse Canvas.Left="1" Canvas.Top="1" Width="8" Height="8"
+                             Stroke="{DynamicResource Muted}" StrokeThickness="1.4"/>
+                    <Line X1="8.5" Y1="8.5" X2="12" Y2="12"
+                          Stroke="{DynamicResource Muted}" StrokeThickness="1.4"
+                          StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                </Canvas>
+                <TextBox x:Name="SearchBox" Style="{StaticResource SearchBox}"
+                         Margin="26,0,8,0" VerticalAlignment="Center"
+                         TextChanged="OnSearchChanged" KeyDown="OnSearchKeyDown"/>
+                <TextBlock x:Name="SearchHint" Text="{x:Static local:L.Search}"
+                           IsHitTestVisible="False" Foreground="{DynamicResource Muted}"
+                           FontSize="12.5" Margin="26,0,8,0" VerticalAlignment="Center"/>
+            </Grid>
+
+            <!-- Разделы либо результаты поиска: одновременно видно что-то одно -->
+            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+                <Grid>
+                    <StackPanel x:Name="NavList" Margin="8,0,8,8">
+                        <RadioButton x:Name="NavBackground" GroupName="Nav" Tag="Background" AutomationProperties.Name="{x:Static local:L.NavBackground}"
+                                     Style="{StaticResource Nav}" Checked="OnNavChecked">
+                            <StackPanel Orientation="Horizontal">
+                                <Border Width="18" Height="18" CornerRadius="4.5" Background="#3E7BFA">
+                                    <Ellipse Width="9" Height="9" Fill="#FFFFFF" Opacity="0.95"/>
+                                </Border>
+                                <TextBlock Style="{StaticResource NavText}"
+                                           Text="{x:Static local:L.NavBackground}"/>
+                            </StackPanel>
+                        </RadioButton>
+
+                        <RadioButton x:Name="NavWindow" GroupName="Nav" Tag="Window" AutomationProperties.Name="{x:Static local:L.NavWindow}"
+                                     Style="{StaticResource Nav}" Checked="OnNavChecked">
+                            <StackPanel Orientation="Horizontal">
+                                <Border Width="18" Height="18" CornerRadius="4.5" Background="#A05CE6">
+                                    <Path Data="M 3.5,5 H 12.5 V 12 H 3.5 Z M 3.5,7.4 H 12.5"
+                                          Stroke="#FFFFFF" StrokeThickness="1.3"
+                                          StrokeLineJoin="Round"/>
+                                </Border>
+                                <TextBlock Style="{StaticResource NavText}"
+                                           Text="{x:Static local:L.NavWindow}"/>
+                            </StackPanel>
+                        </RadioButton>
+
+                        <RadioButton x:Name="NavMarks" GroupName="Nav" Tag="Marks" AutomationProperties.Name="{x:Static local:L.NavMarks}"
+                                     Style="{StaticResource Nav}" Checked="OnNavChecked">
+                            <StackPanel Orientation="Horizontal">
+                                <Border Width="18" Height="18" CornerRadius="4.5" Background="#F0A03C">
+                                    <Path Data="M 4,4.6 H 12 M 8,4.6 V 12"
+                                          Stroke="#FFFFFF" StrokeThickness="1.5"
+                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                </Border>
+                                <TextBlock Style="{StaticResource NavText}"
+                                           Text="{x:Static local:L.NavMarks}"/>
+                            </StackPanel>
+                        </RadioButton>
+
+                        <RadioButton x:Name="NavGeneral" GroupName="Nav" Tag="General" AutomationProperties.Name="{x:Static local:L.NavGeneral}"
+                                     Style="{StaticResource Nav}" Checked="OnNavChecked">
+                            <StackPanel Orientation="Horizontal">
+                                <Border Width="18" Height="18" CornerRadius="4.5" Background="#6D7686">
+                                    <Canvas Width="18" Height="18">
+                                        <Path Data="M 4,6.5 H 13 M 4,11 H 13"
+                                              Stroke="#FFFFFF" StrokeThickness="1.4"
+                                              StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                        <Ellipse Canvas.Left="6" Canvas.Top="5" Width="3" Height="3" Fill="#FFFFFF"/>
+                                        <Ellipse Canvas.Left="9.5" Canvas.Top="9.5" Width="3" Height="3" Fill="#FFFFFF"/>
+                                    </Canvas>
+                                </Border>
+                                <TextBlock Style="{StaticResource NavText}"
+                                           Text="{x:Static local:L.NavGeneral}"/>
+                            </StackPanel>
+                        </RadioButton>
+                    </StackPanel>
+
+                    <StackPanel x:Name="SearchResults" Margin="8,0,8,8" Visibility="Collapsed"/>
+                </Grid>
+            </ScrollViewer>
+
+            <!-- Подвал: имя, версия, метка сборки и ссылка на исходники -->
+            <StackPanel Grid.Row="3" Margin="14,8,14,12">
+                <StackPanel Orientation="Horizontal">
+                    <Image x:Name="TitleIcon" Width="16" Height="16" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="TitleText" Margin="7,0,0,0" FontSize="11.5"
+                               FontWeight="SemiBold" VerticalAlignment="Center"
+                               Foreground="{DynamicResource Muted}"/>
+                </StackPanel>
+                <TextBlock x:Name="BuildStamp" FontSize="10" Margin="23,1,0,0"
+                           Foreground="{DynamicResource Muted}"/>
+                <TextBlock Margin="23,3,0,0" FontSize="10.5" ToolTip="https://github.com/wintence/MacShot">
+                    <Hyperlink NavigateUri="https://github.com/wintence/MacShot"
+                               RequestNavigate="OnOpenLink">
+                        <TextBlock Text="GitHub" Foreground="{DynamicResource Muted}"/>
+                    </Hyperlink>
+                </TextBlock>
             </StackPanel>
         </Grid>
 
-    <!-- Левая колонка: предпросмотр сверху и под ним водяные знаки.
-         Предпросмотр прижат к верху и не уезжает при прокрутке — иначе
-         пришлось бы запоминать, куда только что потянули знак.
-         Правая колонка — остальные настройки, прокручивается вся. -->
-    <Grid x:Name="RootGrid" Grid.Row="1" Margin="12">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="12"/>
-            <ColumnDefinition Width="344"/>
-        </Grid.ColumnDefinitions>
-
-        <!-- ============ Левая колонка ============ -->
-        <Grid Grid.Column="0">
+        <!-- ============ Правая часть ============ -->
+        <Grid Grid.Column="1">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="12"/>
+                <RowDefinition Height="50"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <Border Grid.Row="0" CornerRadius="12" ClipToBounds="True"
-                    BorderBrush="{DynamicResource CardLine}" BorderThickness="1"
-                    MaxHeight="400" VerticalAlignment="Top">
-                <Border x:Name="WatermarkPreview"/>
-            </Border>
+            <!-- Заголовок страницы. Перетаскивание и двойной щелчок — как
+                 у любого окна, кнопка «Готово» закрывает настройки. -->
+            <Grid Grid.Row="0" Margin="24,0,20,0" Background="Transparent"
+                  MouseLeftButtonDown="OnTitleBarDown">
+                <TextBlock x:Name="PageTitle" VerticalAlignment="Center"
+                           FontSize="15" FontWeight="SemiBold"/>
+                <Button x:Name="CloseButton" Content="{x:Static local:L.BtnDone}"
+                        Click="OnCloseClick" Style="{StaticResource LinkButton}"
+                        HorizontalAlignment="Right" VerticalAlignment="Center"/>
+            </Grid>
 
-            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
-                <StackPanel>
-                    <!-- Список добавленных надписей и картинок -->
-                    <StackPanel x:Name="MarkList" Margin="0,0,0,8"/>
+            <Grid Grid.Row="1" Margin="24,0,20,20">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" MinWidth="280"/>
+                    <ColumnDefinition Width="16"/>
+                    <ColumnDefinition Width="352"/>
+                </Grid.ColumnDefinitions>
 
-                    <StackPanel Orientation="Horizontal">
-                        <Button Content="{x:Static local:L.AddText}" Click="OnAddTextMark"
-                                Style="{StaticResource Button}"/>
-                        <Button Content="{x:Static local:L.AddPicture}" Click="OnAddPictureMark"
-                                Style="{StaticResource Button}" Margin="8,0,0,0"/>
-                    </StackPanel>
-
-                    <!-- Редактор выбранного элемента -->
-                    <StackPanel x:Name="MarkEditor" Margin="0,12,0,0" Visibility="Collapsed">
-                        <Border Height="1" Background="{DynamicResource CardLine}" Margin="0,0,0,11"/>
-
-                        <TextBlock x:Name="MarkKindLabel" Style="{StaticResource Caption}"/>
-
-                        <!-- Содержимое: у надписи — текст, у картинки — файл -->
-                        <Border x:Name="MarkTextField" Style="{StaticResource Field}">
-                            <TextBox x:Name="MarkContentBox" TextChanged="OnMarkChanged"
-                                     LostFocus="OnMarkCommitted" FontFamily="Segoe UI, system-ui"/>
-                        </Border>
-
-                        <StackPanel x:Name="MarkPicturePanel" Visibility="Collapsed">
-                            <TextBlock x:Name="MarkPathLabel" Text="{x:Static local:L.NoFile}"
-                                       Style="{StaticResource Caption}" TextWrapping="Wrap"/>
-                            <Button Content="{x:Static local:L.PickPicture}" Click="OnPickMarkPicture"
-                                    Style="{StaticResource Button}" HorizontalAlignment="Left"
-                                    Margin="0,8,0,0"/>
-                        </StackPanel>
-
-                        <!-- Шрифт надписи. Выбор позиции живёт прямо на
-                             предпросмотре: квадраты стоят на рамке кадра,
-                             и клик по нему переносит знак. -->
-                        <StackPanel x:Name="MarkFontPanel" Margin="0,14,0,0">
-                            <TextBlock Text="{x:Static local:L.Font}" Style="{StaticResource Caption}" Margin="0,0,0,6"/>
-                            <ComboBox x:Name="FontBox" SelectionChanged="OnMarkChanged"/>
-                        </StackPanel>
-                        <!-- Цвет надписи -->
-                        <Grid x:Name="MarkColorRow" Margin="0,14,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="8"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <Border Grid.Column="0" Style="{StaticResource Field}">
-                                <TextBox x:Name="MarkColorBox" Text="#FFFFFF"
-                                         TextChanged="OnMarkColorChanged" LostFocus="OnMarkCommitted"/>
-                            </Border>
-                            <Border Grid.Column="2" x:Name="MarkColorSwatch"
-                                    Width="40" Height="36" CornerRadius="8"
-                                    Background="#FFFFFF" Cursor="Hand"
-                                    BorderBrush="{DynamicResource CardLine}" BorderThickness="1"
-                                    ToolTip="{x:Static local:L.PaletteTip}"
-                                    MouseLeftButtonUp="OnPickMarkColor"/>
-                        </Grid>
-
-                        <TextBlock x:Name="MarkSizeLabel" Style="{StaticResource Caption}" Margin="0,14,0,6"/>
-                        <Slider x:Name="MarkSizeSlider" Minimum="6" Maximum="200" Value="18"
-                                ValueChanged="OnMarkChanged"/>
-
-                        <TextBlock x:Name="MarkOpacityLabel" Style="{StaticResource Caption}" Margin="0,14,0,6"/>
-                        <Slider x:Name="MarkOpacitySlider" Minimum="0" Maximum="100" Value="90"
-                                ValueChanged="OnMarkChanged"/>
-
-                        <TextBlock x:Name="MarkMarginLabel" Style="{StaticResource Caption}" Margin="0,14,0,6"/>
-                        <Slider x:Name="MarkMarginSlider" Minimum="0" Maximum="160" Value="24"
-                                ValueChanged="OnMarkChanged"/>
-
-                        <StackPanel x:Name="MarkStylePanel">
-                            <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
-                                <CheckBox x:Name="BoldCheck" Content="{x:Static local:L.Bold}"
-                                          Checked="OnMarkChanged" Unchecked="OnMarkChanged" Cursor="Hand"/>
-                                <CheckBox x:Name="ItalicCheck" Content="{x:Static local:L.Italic}"
-                                          Checked="OnMarkChanged" Unchecked="OnMarkChanged"
-                                          Cursor="Hand" Margin="18,0,0,0"/>
-                            </StackPanel>
-
-                            <CheckBox x:Name="MarkShadowCheck" Content="{x:Static local:L.MarkShadow}"
-                                      Checked="OnMarkChanged" Unchecked="OnMarkChanged"
-                                      Cursor="Hand" Margin="0,14,0,0"/>
-
-                            <StackPanel x:Name="MarkShadowPanel" Margin="28,10,0,0">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="8"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Border Grid.Column="0" Style="{StaticResource Field}">
-                                        <TextBox x:Name="ShadowColorBox" Text="#000000"
-                                                 TextChanged="OnMarkColorChanged" LostFocus="OnMarkCommitted"/>
-                                    </Border>
-                                    <Border Grid.Column="2" x:Name="ShadowColorSwatch"
-                                            Width="40" Height="36" CornerRadius="8"
-                                            Background="#000000" Cursor="Hand"
-                                            BorderBrush="{DynamicResource CardLine}" BorderThickness="1"
-                                            ToolTip="{x:Static local:L.PaletteTip}"
-                                            MouseLeftButtonUp="OnPickShadowColor"/>
-                                </Grid>
-
-                                <TextBlock x:Name="ShadowBlurLabel" Style="{StaticResource Caption}" Margin="0,14,0,6"/>
-                                <Slider x:Name="ShadowBlurSlider" Minimum="0" Maximum="40" Value="6"
-                                        ValueChanged="OnMarkChanged"/>
-
-                                <TextBlock x:Name="ShadowOpacityLabel" Style="{StaticResource Caption}" Margin="0,14,0,6"/>
-                                <Slider x:Name="ShadowOpacitySlider" Minimum="0" Maximum="100" Value="50"
-                                        ValueChanged="OnMarkChanged"/>
-                            </StackPanel>
-                        </StackPanel>
-
-                        <Button Content="{x:Static local:L.BtnRemove}" Click="OnRemoveMark"
-                                Style="{StaticResource DangerButton}" HorizontalAlignment="Left"
-                                Margin="0,20,0,0"/>
-                    </StackPanel>
-                </StackPanel>
-            </ScrollViewer>
-        </Grid>
-
-        <!-- ============ Правая колонка ============ -->
-        <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
-            <StackPanel x:Name="SettingsPanel">
-                <!-- ============ Фон ============ -->
-                <Border Style="{StaticResource Group}">
-                    <StackPanel>
-                        <TextBlock Text="{x:Static local:L.Bg}" Style="{StaticResource Caption}"/>
-
-                        <RadioButton x:Name="BgSolid" Content="{x:Static local:L.BgSolid}" Tag="Solid"
-                                     Checked="OnBackgroundChanged" Cursor="Hand"/>
-                        <RadioButton x:Name="BgGradient" Content="{x:Static local:L.BgGradient}" Tag="Gradient"
-                                     Checked="OnBackgroundChanged" Cursor="Hand"/>
-                        <RadioButton x:Name="BgImage" Content="{x:Static local:L.BgImage}" Tag="Image"
-                                     Checked="OnBackgroundChanged" Cursor="Hand" Margin="0"/>
-
-                        <StackPanel x:Name="SolidPanel" Margin="0,14,0,0">
-                            <TextBlock Text="{x:Static local:L.Color}" Style="{StaticResource Caption}" Margin="0,0,0,6"/>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="8"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <Border Grid.Column="0" Style="{StaticResource Field}">
-                                    <TextBox x:Name="SolidColorBox" Text="#E9EDF5"
-                                             TextChanged="OnColorTextChanged" LostFocus="OnColorCommitted"/>
-                                </Border>
-                                <Border Grid.Column="2" x:Name="SolidSwatch"
-                                        Width="40" Height="36" CornerRadius="8"
-                                        Background="#E9EDF5" Cursor="Hand"
-                                        BorderBrush="{DynamicResource CardLine}" BorderThickness="1"
-                                        ToolTip="{x:Static local:L.PaletteTip}"
-                                        MouseLeftButtonUp="OnPickSolid"/>
-                            </Grid>
-                        </StackPanel>
-
-                        <StackPanel x:Name="GradientPanel" Margin="0,14,0,0">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="12"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="{x:Static local:L.Start}" Style="{StaticResource Caption}" Margin="0,0,0,6"/>
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="8"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <Border Grid.Column="0" Style="{StaticResource Field}">
-                                            <TextBox x:Name="GradientStartBox" Text="#E9EDF5"
-                                                     TextChanged="OnColorTextChanged" LostFocus="OnColorCommitted"/>
-                                        </Border>
-                                        <Border Grid.Column="2" x:Name="GradientStartSwatch"
-                                                Width="40" Height="36" CornerRadius="8"
-                                                Background="#E9EDF5" Cursor="Hand"
-                                                BorderBrush="{DynamicResource CardLine}" BorderThickness="1"
-                                                ToolTip="{x:Static local:L.PaletteTip}"
-                                                MouseLeftButtonUp="OnPickGradientStart"/>
-                                    </Grid>
-                                </StackPanel>
-                                <StackPanel Grid.Column="2">
-                                    <TextBlock Text="{x:Static local:L.End}" Style="{StaticResource Caption}" Margin="0,0,0,6"/>
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="8"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <Border Grid.Column="0" Style="{StaticResource Field}">
-                                            <TextBox x:Name="GradientEndBox" Text="#C3CDE0"
-                                                     TextChanged="OnColorTextChanged" LostFocus="OnColorCommitted"/>
-                                        </Border>
-                                        <Border Grid.Column="2" x:Name="GradientEndSwatch"
-                                                Width="40" Height="36" CornerRadius="8"
-                                                Background="#C3CDE0" Cursor="Hand"
-                                                BorderBrush="{DynamicResource CardLine}" BorderThickness="1"
-                                                ToolTip="{x:Static local:L.PaletteTip}"
-                                                MouseLeftButtonUp="OnPickGradientEnd"/>
-                                    </Grid>
-                                </StackPanel>
-                            </Grid>
-
-                            <TextBlock x:Name="AngleLabel" Text="{x:Static local:L.Start}"
-                                       Style="{StaticResource Caption}" Margin="0,16,0,6"/>
-                            <Slider x:Name="AngleSlider" Minimum="0" Maximum="360" Value="90"
-                                    ValueChanged="OnAngleChanged"/>
-                        </StackPanel>
-
-                        <StackPanel x:Name="ImagePanel" Margin="0,14,0,0" Visibility="Collapsed">
-                            <TextBlock x:Name="ImagePathLabel" Text="{x:Static local:L.NoFile}"
-                                       Style="{StaticResource Caption}" TextWrapping="Wrap"/>
-                            <Button Content="{x:Static local:L.PickImage}" Click="OnPickBackgroundImage"
-                                    Style="{StaticResource Button}" HorizontalAlignment="Left"
-                                    Margin="0,8,0,0"/>
-                        </StackPanel>
-
-                        <Border x:Name="BackgroundPreview" Style="{StaticResource Preview}" Margin="0,16,0,0"/>
-                    </StackPanel>
-                </Border>
-
-                <!-- ============ Окно ============ -->
-                <Border Style="{StaticResource Group}">
-                    <StackPanel>
-                        <TextBlock Text="{x:Static local:L.Window}" Style="{StaticResource Caption}"/>
-
-                        <!-- Ползунок с подписью в одну строку. Раньше подпись и ползунок
-             стояли друг под другом, и на каждый из шести уходило вдвое
-             больше места, чем нужно: значение и так написано в подписи,
-             отдельная колонка для него не нужна. -->
-                        <Grid Margin="0,6,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="110"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock x:Name="PaddingLabel" Grid.Column="0"
-                                       Style="{StaticResource Caption}"
-                                       VerticalAlignment="Center" Margin="0"/>
-                            <Slider x:Name="PaddingSlider" Grid.Column="1"
-                                    Minimum="0" Maximum="160" Value="40"
-                                    ValueChanged="OnValueChanged"/>
-                        </Grid>
-
-                        <CheckBox x:Name="ShadowCheck" Content="{x:Static local:L.Shadow}" IsChecked="True"
-                                  Checked="OnShadowChanged" Unchecked="OnShadowChanged"
-                                  Cursor="Hand" Margin="0,11,0,0"/>
-
-                        <Grid Margin="0,9,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="110"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock x:Name="BlurLabel" Grid.Column="0"
-                                       Style="{StaticResource Caption}"
-                                       VerticalAlignment="Center" Margin="0"/>
-                            <Slider x:Name="BlurSlider" Grid.Column="1"
-                                    Minimum="0" Maximum="90" Value="36"
-                                    ValueChanged="OnValueChanged"/>
-                        </Grid>
-
-                        <Grid Margin="0,9,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="110"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock x:Name="OpacityLabel" Grid.Column="0"
-                                       Style="{StaticResource Caption}"
-                                       VerticalAlignment="Center" Margin="0"/>
-                            <Slider x:Name="OpacitySlider" Grid.Column="1"
-                                    Minimum="0" Maximum="100" Value="45"
-                                    ValueChanged="OnValueChanged"/>
-                        </Grid>
-
-                        <Grid Margin="0,9,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="110"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock x:Name="OffsetLabel" Grid.Column="0"
-                                       Style="{StaticResource Caption}"
-                                       VerticalAlignment="Center" Margin="0"/>
-                            <Slider x:Name="OffsetSlider" Grid.Column="1"
-                                    Minimum="0" Maximum="60" Value="16"
-                                    ValueChanged="OnValueChanged"/>
-                        </Grid>
-
-                        <CheckBox x:Name="HideTitleCheck" Content="{x:Static local:L.HideTitleBar}"
-                                  IsChecked="False" Checked="OnTitleBarChanged"
-                                  Unchecked="OnTitleBarChanged" Cursor="Hand" Margin="0,13,0,0"/>
-
-                        <StackPanel x:Name="TitleBarModePanel" Margin="28,10,0,0">
-                            <RadioButton x:Name="TitleAuto" GroupName="TitleMode" Tag="Auto"
-                                         Content="{x:Static local:L.TitleAuto}"
-                                         Checked="OnTitleBarChanged" Cursor="Hand"/>
-                            <RadioButton x:Name="TitleManual" GroupName="TitleMode" Tag="Manual"
-                                         Content="{x:Static local:L.TitleManual}"
-                                         Checked="OnTitleBarChanged" Cursor="Hand" Margin="0"/>
-                        </StackPanel>
-
-                        <Grid Margin="0,9,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="110"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock x:Name="TitleBarLabel" Grid.Column="0"
-                                       Style="{StaticResource Caption}"
-                                       VerticalAlignment="Center" Margin="0"/>
-                            <Slider x:Name="TitleBarSlider" Grid.Column="1"
-                                    Minimum="0" Maximum="120" Value="32"
-                                    ValueChanged="OnTitleBarChanged"/>
-                        </Grid>
-                        <TextBlock Style="{StaticResource Caption}" Margin="0,6,0,0" TextWrapping="Wrap"
-                                   Text="{x:Static local:L.HideTitleBarHint}"/>
-
-                        <!-- Своя высота для отдельных приложений. Список
-                             наполняется либо сам после снимка, либо вручную -->
-                        <Grid Margin="0,11,0,6">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock x:Name="AppOverridesCaption" Text="{x:Static local:L.PerApp}"
-                                       Style="{StaticResource Caption}" Margin="0"
-                                       VerticalAlignment="Center"/>
-                            <Button Grid.Column="1" x:Name="AddAppButton"
-                                    Content="{x:Static local:L.AddApp}"
-                                    Style="{StaticResource Button}" Click="OnAddAppOverride"
-                                    Padding="12,5" Margin="10,0,0,0"/>
-                        </Grid>
-                        <StackPanel x:Name="AppOverrides" Margin="0,0,0,0"/>
-                        <TextBlock x:Name="AppOverridesEmpty" Text="{x:Static local:L.PerAppEmpty}"
-                                   Style="{StaticResource Caption}" TextWrapping="Wrap"
-                                   Margin="0,4,0,0" Visibility="Collapsed"/>
-                    </StackPanel>
-                </Border>
-
-                <!-- ============ Горячая клавиша ============ -->
-                <Border Style="{StaticResource Group}">
-                    <StackPanel>
-                        <TextBlock Text="{x:Static local:L.HotKey}" Style="{StaticResource Caption}"/>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="170"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <Border Grid.Column="0" Style="{StaticResource Field}" Padding="9,6">
-                                <TextBlock x:Name="HotKeyLabel" Text="Ctrl+Shift+8" FontWeight="SemiBold"/>
-                            </Border>
-                            <Button Grid.Column="2" Content="{x:Static local:L.SetHotKey}" Click="OnSetHotKey"
-                                    Style="{StaticResource Button}" Margin="8,0,0,0"/>
-                        </Grid>
-                        <TextBlock x:Name="HotKeyStatus" Style="{StaticResource Caption}"
-                                   Margin="0,8,0,0" TextWrapping="Wrap"/>
-                    </StackPanel>
-                </Border>
-
-                <!-- ============ Сохранение и запуск ============ -->
-                <Border Style="{StaticResource Group}">
-                    <StackPanel>
-                        <TextBlock Text="{x:Static local:L.Storage}" Style="{StaticResource Caption}"/>
-
-                        <CheckBox x:Name="SaveCheck" Content="{x:Static local:L.SaveCopy}"
-                                  Checked="OnFlagChanged" Unchecked="OnFlagChanged" Cursor="Hand"/>
-
-                        <CheckBox x:Name="StartupCheck" Content="{x:Static local:L.Startup}"
-                                  Checked="OnFlagChanged" Unchecked="OnFlagChanged" Cursor="Hand"
-                                  Margin="0,8,0,0"/>
-                    </StackPanel>
-                </Border>
-
-                <!-- Оформление и язык — в самом низу: они меняются редко, а
-                     место в начале колонки занимают настройки, которые правят
-                     каждый раз -->
-                <Border Style="{StaticResource Group}">
-                    <StackPanel>
-                        <TextBlock Text="{x:Static local:L.Theme}"
-                                   Style="{StaticResource Caption}"/>
-                        <RadioButton x:Name="ThemeDark" GroupName="Theme"
-                                     Content="{x:Static local:L.ThemeDark}"
-                                     Checked="OnThemeChanged" Cursor="Hand"/>
-                        <RadioButton x:Name="ThemeLight" GroupName="Theme" Margin="0"
-                                     Content="{x:Static local:L.ThemeLight}"
-                                     Checked="OnThemeChanged" Cursor="Hand"/>
-                    </StackPanel>
-                </Border>
-
-                <Border Style="{StaticResource Group}">
-                    <StackPanel>
-                        <TextBlock Text="{x:Static local:L.Language}" x:Name="LangCaption"
-                                   Style="{StaticResource Caption}" Tag="lang"/>
-                        <RadioButton x:Name="LangRu" GroupName="Lang"
-                                     Content="{x:Static local:L.LanguageRu}"
-                                     Checked="OnLanguageChanged" Cursor="Hand"/>
-                        <RadioButton x:Name="LangEn" GroupName="Lang" Margin="0"
-                                     Content="{x:Static local:L.LanguageEn}"
-                                     Checked="OnLanguageChanged" Cursor="Hand"/>
-                    </StackPanel>
-                </Border>
-
-                <!-- Подвал: версия и ссылка на исходники слева, кнопка
-                     закрытия справа. Обе части в одной строке и без
-                     карточки: раньше подвал был отдельной карточкой, а
-                     кнопка «Готово» ложилась поверх её угла и выглядела
-                     налезающей. -->
-                <Grid Margin="0,4,0,0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-
-                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                        <TextBlock Text="{x:Static local:L.AppTitle}" Style="{StaticResource Caption}"/>
-                        <TextBlock x:Name="BuildStamp" Style="{StaticResource Caption}"
-                                   FontSize="10" Margin="0,1,0,2"/>
-                        <TextBlock>
-                            <Hyperlink NavigateUri="https://github.com/wintence/MacShot"
-                                       RequestNavigate="OnOpenLink">
-                                <TextBlock Text="{x:Static local:L.Repository}"
-                                           Foreground="{DynamicResource Accent}"
-                                           FontSize="12" TextDecorations="Underline"/>
-                            </Hyperlink>
-                        </TextBlock>
-                    </StackPanel>
-
-                    <Button Grid.Column="1" x:Name="CloseButton" Content="{x:Static local:L.BtnDone}"
-                            Click="OnCloseClick" Style="{StaticResource PrimaryButton}"
-                            VerticalAlignment="Center" Margin="12,0,0,0"/>
+                <!-- ===== Предпросмотр ===== -->
+                <Grid Grid.Column="0">
+                    <!-- Кадр рисуется боевым рендером, поэтому предпросмотр
+                         не расходится с результатом. Высота подгоняется под
+                         ширину колонки в коде: пропорции кадра постоянны. -->
+                    <Border x:Name="PreviewFrame" CornerRadius="12"
+                            ClipToBounds="True" BorderThickness="1"
+                            VerticalAlignment="Center"
+                            BorderBrush="{DynamicResource CardLine}"
+                            Background="{DynamicResource Card}">
+                        <Border x:Name="WatermarkPreview"/>
+                    </Border>
                 </Grid>
-            </StackPanel>
-        </ScrollViewer>
-    </Grid>
+
+                <!-- ===== Страницы настроек ===== -->
+                <ScrollViewer Grid.Column="2" x:Name="SettingsScroll"
+                              VerticalScrollBarVisibility="Auto">
+                    <Grid>
+
+                        <!-- Фон -->
+                        <StackPanel x:Name="PageBackground">
+                            <Border Style="{StaticResource CardBox}">
+                                <StackPanel>
+                                    <TextBlock Text="{x:Static local:L.Bg}"
+                                               Style="{StaticResource CardTitle}"/>
+
+                                    <RadioButton x:Name="BgSolid" Content="{x:Static local:L.BgSolid}"
+                                                 Tag="Solid" Checked="OnBackgroundChanged"
+                                                 Margin="14,0"/>
+                                    <Border Style="{StaticResource Hair}"/>
+                                    <RadioButton x:Name="BgGradient" Content="{x:Static local:L.BgGradient}"
+                                                 Tag="Gradient" Checked="OnBackgroundChanged"
+                                                 Margin="14,0"/>
+                                    <Border Style="{StaticResource Hair}"/>
+                                    <RadioButton x:Name="BgImage" Content="{x:Static local:L.BgImage}"
+                                                 Tag="Image" Checked="OnBackgroundChanged"
+                                                 Margin="14,0,14,8"/>
+
+                                    <!-- Цвет -->
+                                    <StackPanel x:Name="SolidPanel" Margin="14,4,14,14">
+                                        <TextBlock Text="{x:Static local:L.Color}"
+                                                   Style="{StaticResource RowLabel}" Margin="0,0,0,6"/>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="8"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Border Grid.Column="0" Style="{StaticResource Field}">
+                                                <TextBox x:Name="SolidColorBox" Text="#E9EDF5"
+                                                         TextChanged="OnColorTextChanged"
+                                                         LostFocus="OnColorCommitted"/>
+                                            </Border>
+                                            <Border Grid.Column="2" x:Name="SolidSwatch"
+                                                    Width="40" Height="30" CornerRadius="7"
+                                                    Background="#E9EDF5" Cursor="Hand"
+                                                    BorderBrush="{DynamicResource CardLine}" BorderThickness="1"
+                                                    ToolTip="{x:Static local:L.PaletteTip}"
+                                                    MouseLeftButtonUp="OnPickSolid"/>
+                                        </Grid>
+                                    </StackPanel>
+
+                                    <!-- Градиент -->
+                                    <StackPanel x:Name="GradientPanel" Margin="14,4,14,14">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="12"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="{x:Static local:L.Start}"
+                                                           Style="{StaticResource RowLabel}" Margin="0,0,0,6"/>
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="6"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <Border Grid.Column="0" Style="{StaticResource Field}">
+                                                        <TextBox x:Name="GradientStartBox" Text="#E9EDF5"
+                                                                 TextChanged="OnColorTextChanged"
+                                                                 LostFocus="OnColorCommitted"/>
+                                                    </Border>
+                                                    <Border Grid.Column="2" x:Name="GradientStartSwatch"
+                                                            Width="34" Height="30" CornerRadius="7"
+                                                            Background="#E9EDF5" Cursor="Hand"
+                                                            BorderBrush="{DynamicResource CardLine}" BorderThickness="1"
+                                                            ToolTip="{x:Static local:L.PaletteTip}"
+                                                            MouseLeftButtonUp="OnPickGradientStart"/>
+                                                </Grid>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="2">
+                                                <TextBlock Text="{x:Static local:L.End}"
+                                                           Style="{StaticResource RowLabel}" Margin="0,0,0,6"/>
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="6"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <Border Grid.Column="0" Style="{StaticResource Field}">
+                                                        <TextBox x:Name="GradientEndBox" Text="#C3CDE0"
+                                                                 TextChanged="OnColorTextChanged"
+                                                                 LostFocus="OnColorCommitted"/>
+                                                    </Border>
+                                                    <Border Grid.Column="2" x:Name="GradientEndSwatch"
+                                                            Width="34" Height="30" CornerRadius="7"
+                                                            Background="#C3CDE0" Cursor="Hand"
+                                                            BorderBrush="{DynamicResource CardLine}" BorderThickness="1"
+                                                            ToolTip="{x:Static local:L.PaletteTip}"
+                                                            MouseLeftButtonUp="OnPickGradientEnd"/>
+                                                </Grid>
+                                            </StackPanel>
+                                        </Grid>
+
+                                        <TextBlock x:Name="AngleLabel" Style="{StaticResource RowLabel}"
+                                                   Margin="0,14,0,8"/>
+                                        <Slider x:Name="AngleSlider" Minimum="0" Maximum="360" Value="90"
+                                                ValueChanged="OnAngleChanged"/>
+                                    </StackPanel>
+
+                                    <!-- Своё изображение -->
+                                    <StackPanel x:Name="ImagePanel" Margin="14,4,14,14"
+                                                Visibility="Collapsed">
+                                        <TextBlock x:Name="ImagePathLabel" Text="{x:Static local:L.NoFile}"
+                                                   Style="{StaticResource Hint}" Margin="0,0,0,8"/>
+                                        <Button Content="{x:Static local:L.PickImage}"
+                                                Click="OnPickBackgroundImage"
+                                                Style="{StaticResource Button}"
+                                                HorizontalAlignment="Left"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Живой образец фона -->
+                            <Border Style="{StaticResource CardBox}" Padding="14,12">
+                                <StackPanel>
+                                    <TextBlock Text="{x:Static local:L.Preview}"
+                                               Style="{StaticResource RowLabel}" Margin="0,0,0,8"/>
+                                    <Border x:Name="BackgroundPreview" Style="{StaticResource Preview}"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+
+                        <!-- Окно -->
+                        <StackPanel x:Name="PageWindow" Visibility="Collapsed">
+                            <Border Style="{StaticResource CardBox}">
+                                <StackPanel>
+                                    <TextBlock Text="{x:Static local:L.Window}"
+                                               Style="{StaticResource CardTitle}"/>
+
+                                    <StackPanel Margin="14,4,14,10">
+                                        <TextBlock x:Name="PaddingLabel" Style="{StaticResource RowLabel}"
+                                                   Margin="0,0,0,8"/>
+                                        <Slider x:Name="PaddingSlider" Minimum="0" Maximum="160" Value="40"
+                                                ValueChanged="OnValueChanged"/>
+                                    </StackPanel>
+
+                                    <Border Style="{StaticResource Hair}"/>
+
+                                    <CheckBox x:Name="ShadowCheck" Content="{x:Static local:L.Shadow}"
+                                              IsChecked="True" Checked="OnShadowChanged"
+                                              Unchecked="OnShadowChanged" Margin="14,2,14,2"/>
+
+                                    <StackPanel Margin="14,2,14,12">
+                                        <TextBlock x:Name="BlurLabel" Style="{StaticResource RowLabel}"
+                                                   Margin="0,6,0,8"/>
+                                        <Slider x:Name="BlurSlider" Minimum="0" Maximum="90" Value="36"
+                                                ValueChanged="OnValueChanged"/>
+                                        <TextBlock x:Name="OpacityLabel" Style="{StaticResource RowLabel}"
+                                                   Margin="0,12,0,8"/>
+                                        <Slider x:Name="OpacitySlider" Minimum="0" Maximum="100" Value="45"
+                                                ValueChanged="OnValueChanged"/>
+                                        <TextBlock x:Name="OffsetLabel" Style="{StaticResource RowLabel}"
+                                                   Margin="0,12,0,8"/>
+                                        <Slider x:Name="OffsetSlider" Minimum="0" Maximum="60" Value="16"
+                                                ValueChanged="OnValueChanged"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource CardBox}">
+                                <StackPanel>
+                                    <TextBlock Text="{x:Static local:L.TitleCard}"
+                                               Style="{StaticResource CardTitle}"/>
+
+                                    <CheckBox x:Name="HideTitleCheck" Content="{x:Static local:L.HideTitleBar}"
+                                              IsChecked="False" Checked="OnTitleBarChanged"
+                                              Unchecked="OnTitleBarChanged" Margin="14,2,14,2"/>
+
+                                    <Border Style="{StaticResource Hair}"/>
+
+                                    <StackPanel x:Name="TitleBarModePanel" Margin="14,6,14,0">
+                                        <RadioButton x:Name="TitleAuto" GroupName="TitleMode" Tag="Auto"
+                                                     Content="{x:Static local:L.TitleAuto}"
+                                                     Checked="OnTitleBarChanged"/>
+                                        <RadioButton x:Name="TitleManual" GroupName="TitleMode" Tag="Manual"
+                                                     Content="{x:Static local:L.TitleManual}"
+                                                     Checked="OnTitleBarChanged"/>
+                                    </StackPanel>
+
+                                    <StackPanel Margin="14,8,14,12">
+                                        <TextBlock x:Name="TitleBarLabel" Style="{StaticResource RowLabel}"
+                                                   Margin="0,0,0,8"/>
+                                        <Slider x:Name="TitleBarSlider" Minimum="0" Maximum="120" Value="32"
+                                                ValueChanged="OnTitleBarChanged"/>
+                                        <TextBlock Style="{StaticResource Hint}" Margin="0,10,0,0"
+                                                   Text="{x:Static local:L.HideTitleBarHint}"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource CardBox}">
+                                <StackPanel>
+                                    <Grid Margin="14,12,14,6">
+                                        <TextBlock x:Name="AppOverridesCaption" Text="{x:Static local:L.PerApp}"
+                                                   Style="{StaticResource CardTitle}" Margin="0"
+                                                   VerticalAlignment="Center"/>
+                                        <Button Grid.Column="1" x:Name="AddAppButton"
+                                                Content="{x:Static local:L.AddApp}"
+                                                Style="{StaticResource Button}" Click="OnAddAppOverride"
+                                                Padding="10,4" FontSize="11.5"
+                                                HorizontalAlignment="Right"/>
+                                    </Grid>
+
+                                    <StackPanel x:Name="AppOverrides" Margin="14,0,14,0"/>
+                                    <TextBlock x:Name="AppOverridesEmpty" Text="{x:Static local:L.PerAppEmpty}"
+                                               Style="{StaticResource Hint}" Margin="14,0,14,12"
+                                               Visibility="Collapsed"/>
+                                    <Border Height="0"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+
+                        <!-- Знаки -->
+                        <StackPanel x:Name="PageMarks" Visibility="Collapsed">
+                            <Border Style="{StaticResource CardBox}">
+                                <StackPanel>
+                                    <TextBlock Text="{x:Static local:L.NavMarks}"
+                                               Style="{StaticResource CardTitle}"/>
+                                    <StackPanel Orientation="Horizontal" Margin="14,2,14,10">
+                                        <Button Content="{x:Static local:L.AddText}"
+                                                Click="OnAddTextMark" Style="{StaticResource Button}"/>
+                                        <Button Content="{x:Static local:L.AddPicture}"
+                                                Click="OnAddPictureMark" Style="{StaticResource Button}"
+                                                Margin="8,0,0,0"/>
+                                    </StackPanel>
+                                    <Border x:Name="MarkListSeparator" Style="{StaticResource Hair}"/>
+                                    <StackPanel x:Name="MarkList" Margin="10,10,10,4"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Редактор выбранного знака. Пока знак не выбран,
+                                 карточки нет: пустые поля выглядели бы поломкой. -->
+                            <Border x:Name="MarkEditor" Style="{StaticResource CardBox}"
+                                    Visibility="Collapsed">
+                                <StackPanel Margin="14,12,14,14">
+                                    <TextBlock x:Name="MarkKindLabel" Style="{StaticResource CardTitle}"
+                                               Margin="0,0,0,8"/>
+
+                                    <!-- Содержимое: у надписи — текст, у картинки — файл -->
+                                    <Border x:Name="MarkTextField" Style="{StaticResource Field}">
+                                        <TextBox x:Name="MarkContentBox" TextChanged="OnMarkChanged"
+                                                 LostFocus="OnMarkCommitted"
+                                                 FontFamily="Segoe UI, system-ui"/>
+                                    </Border>
+
+                                    <StackPanel x:Name="MarkPicturePanel" Visibility="Collapsed">
+                                        <TextBlock x:Name="MarkPathLabel" Text="{x:Static local:L.NoFile}"
+                                                   Style="{StaticResource Hint}"/>
+                                        <Button Content="{x:Static local:L.PickPicture}"
+                                                Click="OnPickMarkPicture" Style="{StaticResource Button}"
+                                                HorizontalAlignment="Left" Margin="0,8,0,0"/>
+                                    </StackPanel>
+
+                                    <!-- Шрифт. Положение выбирается прямо на
+                                         предпросмотре: квадраты стоят на рамке кадра. -->
+                                    <StackPanel x:Name="MarkFontPanel" Margin="0,12,0,0">
+                                        <TextBlock Text="{x:Static local:L.Font}"
+                                                   Style="{StaticResource RowLabel}" Margin="0,0,0,6"/>
+                                        <ComboBox x:Name="FontBox" SelectionChanged="OnMarkChanged"/>
+                                    </StackPanel>
+
+                                    <!-- Цвет -->
+                                    <Grid x:Name="MarkColorRow" Margin="0,12,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="8"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Grid.Column="0" Style="{StaticResource Field}">
+                                            <TextBox x:Name="MarkColorBox" Text="#FFFFFF"
+                                                     TextChanged="OnMarkColorChanged"
+                                                     LostFocus="OnMarkCommitted"/>
+                                        </Border>
+                                        <Border Grid.Column="2" x:Name="MarkColorSwatch"
+                                                Width="40" Height="30" CornerRadius="7"
+                                                Background="#FFFFFF" Cursor="Hand"
+                                                BorderBrush="{DynamicResource CardLine}" BorderThickness="1"
+                                                ToolTip="{x:Static local:L.PaletteTip}"
+                                                MouseLeftButtonUp="OnPickMarkColor"/>
+                                    </Grid>
+
+                                    <TextBlock x:Name="MarkSizeLabel" Style="{StaticResource RowLabel}"
+                                               Margin="0,12,0,8"/>
+                                    <Slider x:Name="MarkSizeSlider" Minimum="6" Maximum="200" Value="18"
+                                            ValueChanged="OnMarkChanged"/>
+
+                                    <TextBlock x:Name="MarkOpacityLabel" Style="{StaticResource RowLabel}"
+                                               Margin="0,12,0,8"/>
+                                    <Slider x:Name="MarkOpacitySlider" Minimum="0" Maximum="100" Value="90"
+                                            ValueChanged="OnMarkChanged"/>
+
+                                    <TextBlock x:Name="MarkMarginLabel" Style="{StaticResource RowLabel}"
+                                               Margin="0,12,0,8"/>
+                                    <Slider x:Name="MarkMarginSlider" Minimum="0" Maximum="160" Value="24"
+                                            ValueChanged="OnMarkChanged"/>
+
+                                    <StackPanel x:Name="MarkStylePanel" Margin="0,8,0,0">
+                                        <Border Style="{StaticResource Hair}" Margin="0,4,0,4"/>
+                                        <CheckBox x:Name="BoldCheck" Content="{x:Static local:L.Bold}"
+                                                  Checked="OnMarkChanged" Unchecked="OnMarkChanged"/>
+                                        <CheckBox x:Name="ItalicCheck" Content="{x:Static local:L.Italic}"
+                                                  Checked="OnMarkChanged" Unchecked="OnMarkChanged"/>
+                                        <CheckBox x:Name="MarkShadowCheck" Content="{x:Static local:L.MarkShadow}"
+                                                  Checked="OnMarkChanged" Unchecked="OnMarkChanged"/>
+
+                                        <StackPanel x:Name="MarkShadowPanel" Margin="0,4,0,0">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="8"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Border Grid.Column="0" Style="{StaticResource Field}">
+                                                    <TextBox x:Name="ShadowColorBox" Text="#000000"
+                                                             TextChanged="OnMarkColorChanged"
+                                                             LostFocus="OnMarkCommitted"/>
+                                                </Border>
+                                                <Border Grid.Column="2" x:Name="ShadowColorSwatch"
+                                                        Width="40" Height="30" CornerRadius="7"
+                                                        Background="#000000" Cursor="Hand"
+                                                        BorderBrush="{DynamicResource CardLine}" BorderThickness="1"
+                                                        ToolTip="{x:Static local:L.PaletteTip}"
+                                                        MouseLeftButtonUp="OnPickShadowColor"/>
+                                            </Grid>
+
+                                            <TextBlock x:Name="ShadowBlurLabel" Style="{StaticResource RowLabel}"
+                                                       Margin="0,12,0,8"/>
+                                            <Slider x:Name="ShadowBlurSlider" Minimum="0" Maximum="40" Value="6"
+                                                    ValueChanged="OnMarkChanged"/>
+
+                                            <TextBlock x:Name="ShadowOpacityLabel" Style="{StaticResource RowLabel}"
+                                                       Margin="0,12,0,8"/>
+                                            <Slider x:Name="ShadowOpacitySlider" Minimum="0" Maximum="100" Value="50"
+                                                    ValueChanged="OnMarkChanged"/>
+                                        </StackPanel>
+                                    </StackPanel>
+
+                                    <Button Content="{x:Static local:L.BtnRemove}"
+                                            Click="OnRemoveMark" Style="{StaticResource DangerButton}"
+                                            HorizontalAlignment="Left" Margin="0,16,0,0"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+
+                        <!-- Общие -->
+                        <StackPanel x:Name="PageGeneral" Visibility="Collapsed">
+                            <Border Style="{StaticResource CardBox}">
+                                <StackPanel>
+                                    <TextBlock Text="{x:Static local:L.HotKey}"
+                                               Style="{StaticResource CardTitle}"/>
+
+                                    <Grid Margin="14,4,14,14">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Grid.Column="0" Style="{StaticResource Field}" Padding="9,6">
+                                            <TextBlock x:Name="HotKeyLabel" Text="Ctrl+Shift+8"
+                                                       FontWeight="SemiBold"/>
+                                        </Border>
+                                        <Button Grid.Column="1" Content="{x:Static local:L.SetHotKey}"
+                                                Click="OnSetHotKey" Style="{StaticResource Button}"
+                                                Margin="8,0,0,0"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource CardBox}">
+                                <StackPanel>
+                                    <TextBlock Text="{x:Static local:L.Storage}"
+                                               Style="{StaticResource CardTitle}"/>
+
+                                    <CheckBox x:Name="SaveCheck" Content="{x:Static local:L.SaveCopy}"
+                                              Checked="OnFlagChanged" Unchecked="OnFlagChanged"
+                                              Margin="14,2,14,2"/>
+                                    <Border Style="{StaticResource Hair}"/>
+                                    <CheckBox x:Name="StartupCheck" Content="{x:Static local:L.Startup}"
+                                              Checked="OnFlagChanged" Unchecked="OnFlagChanged"
+                                              Margin="14,2,14,8"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource CardBox}">
+                                <StackPanel>
+                                    <TextBlock Text="{x:Static local:L.Theme}"
+                                               Style="{StaticResource CardTitle}"/>
+
+                                    <!-- Две миниатюры: тему видно, а не только читаешь -->
+                                    <StackPanel Orientation="Horizontal" Margin="14,2,14,14">
+                                        <RadioButton x:Name="ThemeDark" GroupName="Theme" AutomationProperties.Name="{x:Static local:L.ThemeDark}"
+                                                     Checked="OnThemeChanged"
+                                                     Style="{StaticResource ThemeTile}">
+                                            <StackPanel>
+                                                <Border Width="96" Height="56" CornerRadius="5"
+                                                        Background="#141418" ClipToBounds="True">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="24"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <Border Background="#242430"/>
+                                                        <StackPanel Grid.Column="1" Margin="5,6,5,0">
+                                                            <Border Height="7" CornerRadius="2" Background="#33333F"/>
+                                                            <Border Height="7" CornerRadius="2" Background="#33333F"
+                                                                    Margin="0,4,0,0"/>
+                                                            <Border Height="7" CornerRadius="2" Background="#4C8DFF"
+                                                                    Width="20" HorizontalAlignment="Left"
+                                                                    Margin="0,4,0,0"/>
+                                                        </StackPanel>
+                                                    </Grid>
+                                                </Border>
+                                                <TextBlock Text="{x:Static local:L.ThemeDark}"
+                                                           Foreground="{DynamicResource Text}"
+                                                           HorizontalAlignment="Center" FontSize="11.5"
+                                                           Margin="0,6,0,0"/>
+                                            </StackPanel>
+                                        </RadioButton>
+
+                                        <RadioButton x:Name="ThemeLight" GroupName="Theme" AutomationProperties.Name="{x:Static local:L.ThemeLight}"
+                                                     Checked="OnThemeChanged"
+                                                     Style="{StaticResource ThemeTile}"
+                                                     Margin="10,0,0,0">
+                                            <StackPanel>
+                                                <Border Width="96" Height="56" CornerRadius="5"
+                                                        Background="#F3F4F7" ClipToBounds="True">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="24"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <Border Background="#E9EBF0"/>
+                                                        <StackPanel Grid.Column="1" Margin="5,6,5,0">
+                                                            <Border Height="7" CornerRadius="2" Background="#FFFFFF"/>
+                                                            <Border Height="7" CornerRadius="2" Background="#FFFFFF"
+                                                                    Margin="0,4,0,0"/>
+                                                            <Border Height="7" CornerRadius="2" Background="#2F6FE4"
+                                                                    Width="20" HorizontalAlignment="Left"
+                                                                    Margin="0,4,0,0"/>
+                                                        </StackPanel>
+                                                    </Grid>
+                                                </Border>
+                                                <TextBlock Text="{x:Static local:L.ThemeLight}"
+                                                           Foreground="{DynamicResource Text}"
+                                                           HorizontalAlignment="Center" FontSize="11.5"
+                                                           Margin="0,6,0,0"/>
+                                            </StackPanel>
+                                        </RadioButton>
+                                    </StackPanel>
+
+                                    <Border Style="{StaticResource Hair}"/>
+
+                                    <TextBlock x:Name="LangCaption" Text="{x:Static local:L.Language}"
+                                               Style="{StaticResource CardTitle}" Tag="lang"
+                                               Margin="14,12,14,4"/>
+
+                                    <RadioButton x:Name="LangRu" GroupName="Lang"
+                                                 Content="{x:Static local:L.LanguageRu}"
+                                                 Checked="OnLanguageChanged" Margin="14,0"/>
+                                    <Border Style="{StaticResource Hair}"/>
+                                    <RadioButton x:Name="LangEn" GroupName="Lang"
+                                                 Content="{x:Static local:L.LanguageEn}"
+                                                 Checked="OnLanguageChanged" Margin="14,0,14,8"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+
+                    </Grid>
+                </ScrollViewer>
+            </Grid>
+        </Grid>
     </Grid>
 </Window>

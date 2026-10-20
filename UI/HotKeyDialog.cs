@@ -35,6 +35,7 @@ public sealed class HotKeyDialog : Window
         // Диалог создаётся заново на каждый вызов, поэтому цвета читаются
         // один раз — и те, какая тема выбрана сейчас
         Background = Theme.Palette.Of("Bg");
+        Foreground = Theme.Palette.Of("Text");
         FontFamily = new FontFamily("Segoe UI, system-ui");
 
         // Свой заголовок вместо системного: иначе у тёмного окна остаётся
@@ -77,7 +78,7 @@ public sealed class HotKeyDialog : Window
 
         _caption = new TextBlock
         {
-            Text = PreparedGesture,
+            Text = Services.HotKeyService.Friendly(PreparedGesture),
             FontSize = 19,
             FontWeight = FontWeights.SemiBold,
             HorizontalAlignment = HorizontalAlignment.Center,
@@ -170,7 +171,7 @@ public sealed class HotKeyDialog : Window
         PreparedGesture = Services.HotKeyService.Normalize(CurrentModifiers() + "+" + e.Key);
 
         // Показываем набранное сочетание в рамке
-        _caption.Text = PreparedGesture;
+        _caption.Text = Services.HotKeyService.Friendly(PreparedGesture);
 
         e.Handled = true;
     }

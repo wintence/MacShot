@@ -112,6 +112,19 @@ internal sealed class ThemePalette
         ("RowBg", "#1A1A20"),
         ("RowSelected", "#2A3B57"),
         ("ScrollThumbBg", "#4A4A58"),
+        // Боковая панель настроек: чуть светлее фона окна, чтобы колонка
+        // отделялась без рамки, и темнее карточек, чтобы карточки читались
+        // на ней, а не наоборот.
+        ("SidebarBg", "#1E1E26"),
+        ("SidebarLine", "#2A2A34"),
+        // Вуаль под курсором в списке разделов. Прозрачность вместо цвета:
+        // подсветка ложится на любой фон и не перерисовывает строку.
+        ("NavHover", "#14FFFFFF"),
+        ("SearchBg", "#2A2A34"),
+        // Дорожка выключенного переключателя и его бегунок.
+        ("ToggleOff", "#3A3A46"),
+        ("ToggleKnob", "#FFFFFF"),
+        ("SliderKnob", "#C6CAD3"),
         // Квадраты выбора позиции лежат поверх фона кадра, а не поверх темы,
         // поэтому берут не цвета темы, а собственную двойную рамку: тёмную
         // снаружи и светлую внутри. Она одинакова в обеих темах — иначе
@@ -161,6 +174,13 @@ internal sealed class ThemePalette
         ("RowBg", "#F5F6F9"),
         ("RowSelected", "#E4EDFD"),
         ("ScrollThumbBg", "#B3BAC6"),
+        ("SidebarBg", "#E9EBF0"),
+        ("SidebarLine", "#D8DBE2"),
+        ("NavHover", "#10000000"),
+        ("SearchBg", "#DCDFE6"),
+        ("ToggleOff", "#C9CED8"),
+        ("ToggleKnob", "#FFFFFF"),
+        ("SliderKnob", "#8B93A1"),
         ("SpotFill", "#991C1F26"),
         ("SpotLine", "#B3FFFFFF"),
         ("SpotHalo", "#8C000000"),

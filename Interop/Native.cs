@@ -292,6 +292,37 @@ internal static class Native
     public static void AddExStyle(IntPtr hwnd, int flags) =>
         SetWindowLongAuto(hwnd, GWL_EXSTYLE, GetWindowLongAuto(hwnd, GWL_EXSTYLE) | flags);
 
+    // ---- Оформление окна ----
+
+    public const int DWMWA_WINDOW_CORNER_PREFERENCE = 33;
+
+    [DllImport("dwmapi.dll")]
+    private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
+
+    /// <summary>
+    /// Скругляет углы окна без системной рамки. Признак появился в Windows 11
+    /// (22H2): там DWM сам обрезает окно по радиусу, и клиентская область не
+    /// вылезает за скругление.
+    ///
+    /// На Windows 10 вызов просто ничего не делает — возвращаемся молча,
+    /// окно остаётся с прямыми углами, как и было до этой правки.
+    /// </summary>
+    public static void RoundCorners(IntPtr hwnd)
+    {
+        if (hwnd == IntPtr.Zero)
+            return;
+
+        try
+        {
+            int round = 2; // DWMWCP_ROUND
+            DwmSetWindowAttribute(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, ref round, sizeof(int));
+        }
+        catch
+        {
+            // Старая сборка dwmapi — атрибута нет, скругления не будет
+        }
+    }
+
     // ---- Структуры ----
 
     [StructLayout(LayoutKind.Sequential)]

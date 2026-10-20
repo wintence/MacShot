@@ -146,6 +146,46 @@ internal sealed class HotKeyService : IDisposable
             ? Describe(modifiers, key)
             : "Ctrl+Shift+8";
 
+    /// <summary>
+    /// Подпись сочетания для экрана.
+    ///
+    /// В настройках хранится имя клавиши из перечисления Windows
+    /// ("Ctrl+OemPlus"): по нему сочетание разбирается обратно. Человеку же
+    /// понятнее знак на клавише — "Ctrl+=". Меняем только подпись, хранение
+    /// остаётся прежним, иначе старые настройки перестали бы читаться.
+    /// </summary>
+    public static string Friendly(string? gesture)
+    {
+        if (string.IsNullOrWhiteSpace(gesture))
+            return string.Empty;
+
+        var parts = gesture.Split('+');
+
+        for (int i = 0; i < parts.Length; i++)
+        {
+            parts[i] = parts[i] switch
+            {
+                "OemPlus" => "=",
+                "OemMinus" => "-",
+                "OemComma" => ",",
+                "OemPeriod" => ".",
+                "OemQuestion" => "/",
+                "OemSemicolon" => ";",
+                "OemOpenBrackets" => "[",
+                "OemCloseBrackets" => "]",
+                "OemQuotes" => "'",
+                "OemPipe" => "\\",
+                "OemBackslash" => "\\",
+                "OemTilde" => "`",
+                _ when parts[i].Length == 2 && parts[i][0] == 'D' && char.IsDigit(parts[i][1])
+                    => parts[i][1].ToString(),
+                _ => parts[i],
+            };
+        }
+
+        return string.Join("+", parts);
+    }
+
     private static string Describe(uint modifiers, Key key)
     {
         var parts = new System.Collections.Generic.List<string>(4);

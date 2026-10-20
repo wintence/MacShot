@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using Microsoft.Win32;
+using MacShot.Interop;
 using MacShot.Render;
 using MacShot.Services;
 using MacShot.Settings;
@@ -22,6 +23,12 @@ public partial class SettingsWindow : Window
     private readonly AppSettings _settings;
     private readonly TrayIcon _tray;
 
+    /// <summary>Страницы настроек по тегу пункта списка разделов.</summary>
+    private readonly Dictionary<string, StackPanel> _pages = new();
+
+    /// <summary>Тег открытой страницы.</summary>
+    private string _page = "Background";
+
     /// <summary>Заполнено ли уже поле — защита от обработчиков, летящих при создании.</summary>
     private bool _ready;
 
@@ -34,9 +41,31 @@ public partial class SettingsWindow : Window
 
         Title = I18n.Current["set.title"];
 
-        // Заголовок окна свой, поэтому и надпись, и иконку рисуем сами.
-        TitleText.Text = Title;
+        // Имя и версия живут в подвале боковой панели, иконка — рядом.
+        TitleText.Text = L.AppTitle;
         TitleIcon.Source = TitleBar.AppIcon();
+
+        // Страницы настроек: слева выбирают раздел, справа показывается
+        // только он. Словарь собирается здесь, чтобы обработчик выбора
+        // знал, что именно показывать.
+        _pages["Background"] = PageBackground;
+        _pages["Window"] = PageWindow;
+        _pages["Marks"] = PageMarks;
+        _pages["General"] = PageGeneral;
+
+        // Пропорции рамки постоянны, а ширина колонки — нет: высота
+        // предпросмотра подгоняется под неё, иначе кадр либо не влезал,
+        // либо оставлял по бокам пустые полосы.
+        PreviewFrame.SizeChanged += (_, _) =>
+        {
+            double width = PreviewFrame.ActualWidth;
+            if (width > 0)
+                WatermarkPreview.Height = Math.Round(width / 1.5789);
+        };
+
+        // Окно без системной рамки: скругляем его углы средствами DWM,
+        // как у обычного окна Windows 11.
+        Loaded += (_, _) => Native.RoundCorners(new WindowInteropHelper(this).Handle);
 
         // Метка сборки в подвале: по ней видно, какой файл запущен.
         // Версия одна и та же, а сборка пересобирается часто, и без метки
@@ -128,15 +157,26 @@ public partial class SettingsWindow : Window
     /// оба идут через композитор, и окно открывается плавно даже на слабом
     /// ноутбуке.
     /// </summary>
-    private void AnimateIn()
+    private void AnimateIn() => AnimatePage(CurrentPage());
+
+    /// <summary>Страница, которая сейчас показана.</summary>
+    private StackPanel? CurrentPage() =>
+        _pages.TryGetValue(_page, out var panel) ? panel : null;
+
+    /// <summary>
+    /// Секции одной страницы въезжают по очереди.
+    ///
+    /// Считаем только карточки: полоски-разделители и служебные элементы
+    /// двигать незачем, они часть карточки.
+    /// </summary>
+    private void AnimatePage(StackPanel? page)
     {
-        if (SettingsPanel is null)
+        if (page is null)
             return;
 
-        var groups = SettingsPanel.Children.OfType<Border>().ToList();
         int index = 0;
 
-        foreach (Border group in groups)
+        foreach (Border group in page.Children.OfType<Border>().ToList())
         {
             group.RenderTransformOrigin = new Point(0.5, 0.5);
             group.RenderTransform = new TranslateTransform(0, 14);
@@ -173,6 +213,209 @@ public partial class SettingsWindow : Window
 
             index++;
             board.Begin(this, isControllable: true);
+        }
+    }
+
+    /// <summary>Выбрали раздел в боковой панели.</summary>
+    private void OnNavChecked(object sender, RoutedEventArgs e)
+    {
+        // При разборе разметки отмеченный пункт срабатывает раньше, чем
+        // страницы попадут в словарь
+        if (_pages.Count == 0)
+            return;
+
+        if (sender is RadioButton { Tag: string page })
+            ShowPage(page);
+    }
+
+    /// <summary>
+    /// Показывает страницу раздела и прячет остальные.
+    ///
+    /// Прокрутка сбрасывается к началу: иначе раздел с коротким списком
+    /// открывался бы на середине, унаследовав положение предыдущего.
+    /// </summary>
+    private void ShowPage(string page)
+    {
+        if (!_pages.TryGetValue(page, out var panel))
+            return;
+
+        _page = page;
+
+        foreach (var pair in _pages)
+            pair.Value.Visibility = pair.Key == page ? Visibility.Visible : Visibility.Collapsed;
+
+        PageTitle.Text = I18n.Current["set.nav." + page.ToLowerInvariant()];
+
+        // Прокрутку сбрасываем после перекладки: если сделать это сразу,
+        // ScrollViewer ещё держит старую высоту содержимого и оставляет
+        // смещение от предыдущей страницы.
+        Dispatcher.BeginInvoke(
+            System.Windows.Threading.DispatcherPriority.Loaded,
+            new Action(() => SettingsScroll.ScrollToTop()));
+
+        if (_ready)
+            AnimatePage(panel);
+    }
+
+    // ---- Поиск ----
+
+    /// <summary>
+    /// Что искать. Ключи — те же строки, что и подписи в разметке: искать
+    /// по отдельному списку слов значило бы завести второй перечень,
+    /// который разойдётся с интерфейсом при первой же правке.
+    /// </summary>
+    private static readonly (string Key, string Page)[] SearchIndex =
+    {
+        ("set.bg", "Background"),
+        ("set.bgSolid", "Background"),
+        ("set.bgGradient", "Background"),
+        ("set.bgImage", "Background"),
+        ("set.color", "Background"),
+        ("set.start", "Background"),
+        ("set.end", "Background"),
+        ("set.angle", "Background"),
+        ("set.pickImage", "Background"),
+
+        ("set.padding", "Window"),
+        ("set.shadow", "Window"),
+        ("set.blur", "Window"),
+        ("set.opacity", "Window"),
+        ("set.offset", "Window"),
+        ("set.hideTitleBar", "Window"),
+        ("set.titleAuto", "Window"),
+        ("set.titleManual", "Window"),
+        ("set.titleBarHeight", "Window"),
+        ("set.perApp", "Window"),
+
+        ("set.addText", "Marks"),
+        ("set.addPicture", "Marks"),
+        ("set.font", "Marks"),
+        ("set.bold", "Marks"),
+        ("set.italic", "Marks"),
+        ("set.markShadow", "Marks"),
+        ("set.btnRemove", "Marks"),
+
+        ("set.hotkey", "General"),
+        ("set.setHotkey", "General"),
+        ("set.saveCopy", "General"),
+        ("set.startup", "General"),
+        ("set.theme", "General"),
+        ("set.language", "General"),
+    };
+
+    /// <summary>
+    /// Строка поиска. Пока она пуста, в панели разделы; как только в ней
+    /// что-то есть — найденные настройки, и разделы убираются, чтобы не
+    /// спорить с результатами за место.
+    /// </summary>
+    private void OnSearchChanged(object sender, TextChangedEventArgs e)
+    {
+        bool empty = string.IsNullOrWhiteSpace(SearchBox.Text);
+
+        SearchHint.Visibility = empty ? Visibility.Visible : Visibility.Collapsed;
+        NavList.Visibility = empty ? Visibility.Visible : Visibility.Collapsed;
+        SearchResults.Visibility = empty ? Visibility.Collapsed : Visibility.Visible;
+
+        SearchResults.Children.Clear();
+
+        if (empty)
+            return;
+
+        BuildSearchResults(SearchBox.Text.Trim());
+    }
+
+    private void BuildSearchResults(string query)
+    {
+        foreach (var (key, page) in SearchIndex)
+        {
+            string label = I18n.Current[key];
+
+            // Подписи ползунков содержат значение: «Отступ: {0}». Для
+            // поиска шаблон не годится, поэтому место подстановки срезаем.
+            int brace = label.IndexOf('{');
+            if (brace > 0)
+                label = label[..brace].TrimEnd(' ', ':');
+
+            if (label.IndexOf(query, StringComparison.CurrentCultureIgnoreCase) < 0)
+                continue;
+
+            var text = new TextBlock { Text = label, FontSize = 12.5 };
+            ResourceLink(text, TextBlock.ForegroundProperty, "Text");
+
+            var pageName = new TextBlock
+            {
+                Text = I18n.Current["set.nav." + page.ToLowerInvariant()],
+                FontSize = 10.5,
+                Margin = new Thickness(0, 1, 0, 0),
+            };
+            ResourceLink(pageName, TextBlock.ForegroundProperty, "Muted");
+
+            var body = new StackPanel { Children = { text, pageName } };
+
+            var row = new Button
+            {
+                Style = (Style)FindResource("SearchRow"),
+                Content = body,
+                Tag = page,
+            };
+            row.Click += OnSearchResultClick;
+
+            SearchResults.Children.Add(row);
+        }
+
+        if (SearchResults.Children.Count == 0)
+        {
+            var none = new TextBlock
+            {
+                Text = I18n.Current["set.noResults"],
+                FontSize = 12,
+                Margin = new Thickness(10, 8, 0, 0),
+            };
+            ResourceLink(none, TextBlock.ForegroundProperty, "Muted");
+            SearchResults.Children.Add(none);
+        }
+    }
+
+    /// <summary>Переход к найденной настройке: открыть её раздел и погасить поиск.</summary>
+    private void OnSearchResultClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: string page })
+            return;
+
+        RadioButton? nav = page switch
+        {
+            "Background" => NavBackground,
+            "Window" => NavWindow,
+            "Marks" => NavMarks,
+            _ => NavGeneral,
+        };
+
+        // Отметка пункта сама покажет страницу; если он уже отмечен,
+        // обработчик не сработает, и страницу открываем вручную
+        if (nav.IsChecked == true)
+            ShowPage(page);
+        else
+            nav.IsChecked = true;
+
+        SearchBox.Clear();
+    }
+
+    /// <summary>Enter открывает первый результат, Esc очищает строку.</summary>
+    private void OnSearchKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Escape)
+        {
+            SearchBox.Clear();
+            return;
+        }
+
+        if (e.Key != Key.Enter)
+            return;
+
+        if (SearchResults.Children.OfType<Button>().FirstOrDefault() is { } first)
+        {
+            first.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
+            e.Handled = true;
         }
     }
 
@@ -304,7 +547,7 @@ public partial class SettingsWindow : Window
         SaveCheck.IsChecked = _settings.SaveToDisk;
         StartupCheck.IsChecked = _settings.RunAtStartup;
 
-        HotKeyLabel.Text = _settings.HotKey;
+        HotKeyLabel.Text = HotKeyService.Friendly(_settings.HotKey);
 
         LangRu.IsChecked = _settings.Language == UiLanguage.Russian;
         LangEn.IsChecked = _settings.Language == UiLanguage.English;
@@ -326,6 +569,11 @@ public partial class SettingsWindow : Window
         SetSwatch(SolidSwatch, _settings.SolidColor);
         SetSwatch(GradientStartSwatch, _settings.GradientStart);
         SetSwatch(GradientEndSwatch, _settings.GradientEnd);
+
+        // Первый раздел открыт сразу: окно без страницы выглядело бы пустым.
+        // Отметка пункта сама вызовет OnNavChecked, но до _ready — без анимации;
+        // въезд секций проиграет AnimateIn по событию Loaded.
+        NavBackground.IsChecked = true;
 
         _ready = true;
 
@@ -912,6 +1160,10 @@ public partial class SettingsWindow : Window
         }
 
         MarkEditor.Visibility = Selected is null ? Visibility.Collapsed : Visibility.Visible;
+
+        // Пустой список не должен оставлять под кнопками волосяную линию:
+        // она читается как обрезанная карточка
+        MarkListSeparator.Visibility = marks.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
     }
 
     private static void MarkRowSelected(Border row)
@@ -1883,7 +2135,7 @@ public partial class SettingsWindow : Window
             return;
 
         _settings.HotKey = dialog.PreparedGesture;
-        HotKeyLabel.Text = _settings.HotKey;
+        HotKeyLabel.Text = HotKeyService.Friendly(_settings.HotKey);
 
         Persist();
     }

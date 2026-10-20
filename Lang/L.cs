@@ -25,6 +25,13 @@ public static class L
 
     public static string Title => I18n.Current["set.title"];
 
+    public static string Search => I18n.Current["set.search"];
+    public static string NoResults => I18n.Current["set.noResults"];
+    public static string NavBackground => I18n.Current["set.nav.background"];
+    public static string NavWindow => I18n.Current["set.nav.window"];
+    public static string NavMarks => I18n.Current["set.nav.marks"];
+    public static string NavGeneral => I18n.Current["set.nav.general"];
+
     public static string Language => I18n.Current["set.language"];
     public static string LanguageRu => I18n.Current["set.languageRu"];
     public static string LanguageEn => I18n.Current["set.languageEn"];
@@ -46,6 +53,7 @@ public static class L
 
     public static string Window => I18n.Current["set.window"];
     public static string Shadow => I18n.Current["set.shadow"];
+    public static string TitleCard => I18n.Current["set.titleCard"];
     public static string HotKey => I18n.Current["set.hotkey"];
     public static string SetHotKey => I18n.Current["set.setHotkey"];
     public static string Storage => I18n.Current["set.storage"];

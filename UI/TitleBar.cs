@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using MacShot.Interop;
 using MacShot.Themes;
 
 namespace MacShot.UI;
@@ -20,56 +21,47 @@ namespace MacShot.UI;
 /// </summary>
 internal static class TitleBar
 {
-    /// <summary>Заголовок с иконкой, названием и кружком закрытия.</summary>
+    /// <summary>Заголовок с кружком закрытия, названием и перетаскиванием.</summary>
     public static FrameworkElement Build(Window window, string title)
     {
         var bar = new Grid
         {
-            Height = 34,
+            Height = 44,
             Background = Theme.Palette.Of("Bg"),
         };
-
-        bar.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        bar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
         var left = new StackPanel
         {
             Orientation = Orientation.Horizontal,
             VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(10, 0, 0, 0),
+            Margin = new Thickness(14, 0, 0, 0),
         };
 
-        left.Children.Add(new Image
-        {
-            Width = 16,
-            Height = 16,
-            VerticalAlignment = VerticalAlignment.Center,
-            Source = AppIcon(),
-        });
-
-        left.Children.Add(new TextBlock
-        {
-            Text = title,
-            FontSize = 12,
-            Foreground = Theme.Palette.Of("Muted"),
-            VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(8, 0, 0, 0),
-        });
-
-        Grid.SetColumn(left, 0);
-        bar.Children.Add(left);
-
+        // Кружок закрытия стоит слева, как в главном окне: у диалогов
+        // раньше он висел справа, и два окна программы выглядели как
+        // приложения из разных систем.
         var close = new Button
         {
             Style = (Style)Application.Current.TryFindResource("TrafficButton"),
             Foreground = new SolidColorBrush(Color.FromRgb(0xFF, 0x5F, 0x57)),
-            Margin = new Thickness(0, 0, 10, 0),
+            Margin = new Thickness(0),
             Cursor = Cursors.Hand,
         };
 
         close.Click += (_, _) => window.Close();
-        Grid.SetColumn(close, 1);
-        bar.Children.Add(close);
+        left.Children.Add(close);
+
+        left.Children.Add(new TextBlock
+        {
+            Text = title,
+            FontSize = 13,
+            FontWeight = FontWeights.SemiBold,
+            Foreground = Theme.Palette.Of("Text"),
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(10, 0, 0, 0),
+        });
+
+        bar.Children.Add(left);
 
         bar.MouseLeftButtonDown += (_, e) =>
         {
@@ -86,6 +78,11 @@ internal static class TitleBar
                 // Кнопку отпустили раньше, чем перетаскивание началось
             }
         };
+
+        // Углы диалога скругляет DWM: окно без системной рамки иначе
+        // остаётся прямоугольным, в отличие от окна настроек.
+        window.Loaded += (_, _) =>
+            Native.RoundCorners(new WindowInteropHelper(window).Handle);
 
         return bar;
     }
