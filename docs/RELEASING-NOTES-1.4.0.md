@@ -1,4 +1,4 @@
-![MacShot window settings](https://raw.githubusercontent.com/wintence/MacShot/v1.4.0/docs/window.png)
+﻿![MacShot window settings](https://raw.githubusercontent.com/wintence/MacShot/v1.4.0/docs/window.png)
 
 ## What's new
 
@@ -11,5 +11,5 @@
 
 | File | Size | Requires |
 |---|---|---|
-| `MacShot-full.exe` | 68.5 MB | nothing, .NET is inside |
+| `MacShot-full.exe` | 65 MB | nothing, .NET is inside |
 | `MacShot-lite.exe` | 0.9 MB | [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0) |

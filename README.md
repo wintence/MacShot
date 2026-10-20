@@ -1,4 +1,4 @@
-# MacShot
+﻿# MacShot
 
 Window screenshots in the macOS style for Windows.
 
@@ -76,7 +76,7 @@ Download from [Releases](https://github.com/wintence/MacShot/releases) and run i
 
 | File | Size | Requires |
 |---|---|---|
-| `MacShot-full.exe` | 68.5 MB | nothing, .NET is inside |
+| `MacShot-full.exe` | 65 MB | nothing, .NET is inside |
 | `MacShot-lite.exe` | 0.9 MB | [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0) |
 
 The full file is large almost entirely because of the bundled .NET — the program itself is about 800 KB. Details in [docs/HOW-IT-WORKS.md](docs/HOW-IT-WORKS.md).
