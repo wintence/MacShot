@@ -146,18 +146,18 @@
                         <RadioButton x:Name="NavBackground" GroupName="Nav" Tag="Background" AutomationProperties.Name="{x:Static local:L.NavBackground}"
                                      Style="{StaticResource Nav}" Checked="OnNavChecked">
                             <StackPanel Orientation="Horizontal">
-                                <Border Width="18" Height="18" CornerRadius="4.5" Background="#3E7BFA">
-                                    <Canvas Width="18" Height="18">
-                                        <!-- Снимок: белая рамка, окно-вырез и горы -->
-                                        <Border Canvas.Left="3.5" Canvas.Top="4.5"
-                                                Width="11" Height="9" CornerRadius="2"
-                                                Background="#FFFFFF"/>
-                                        <Ellipse Canvas.Left="5.8" Canvas.Top="6.3"
-                                                 Width="2.3" Height="2.3" Fill="#3E7BFA"/>
-                                        <Path Fill="#3E7BFA"
-                                              Data="M 5.3,13.5 L 8.1,9.3 L 10.3,12.0 L 11.5,10.6 L 13.3,13.5 Z"/>
-                                    </Canvas>
-                                </Border>
+                                <Canvas Style="{StaticResource NavIcon}">
+                                    <!-- Снимок: рамка, солнце и две вершины -->
+                                    <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
+                                          StrokeThickness="1.3" StrokeLineJoin="Round"
+                                          Data="M 5.4,4.4 H 12.6 A 2,2 0 0 1 14.6,6.4 V 11.6 A 2,2 0 0 1 12.6,13.6 H 5.4 A 2,2 0 0 1 3.4,11.6 V 6.4 A 2,2 0 0 1 5.4,4.4 Z"/>
+                                    <Ellipse Canvas.Left="5.7" Canvas.Top="6.6" Width="2" Height="2"
+                                             Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/>
+                                    <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
+                                          StrokeThickness="1.25" StrokeLineJoin="Round"
+                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                          Data="M 5.0,11.8 L 7.7,9.1 L 9.6,10.9 L 11.0,9.6 L 12.9,11.7"/>
+                                </Canvas>
                                 <TextBlock Style="{StaticResource NavText}"
                                            Text="{x:Static local:L.NavBackground}"/>
                             </StackPanel>
@@ -166,16 +166,12 @@
                         <RadioButton x:Name="NavWindow" GroupName="Nav" Tag="Window" AutomationProperties.Name="{x:Static local:L.NavWindow}"
                                      Style="{StaticResource Nav}" Checked="OnNavChecked">
                             <StackPanel Orientation="Horizontal">
-                                <Border Width="18" Height="18" CornerRadius="4.5" Background="#A05CE6">
-                                    <Canvas Width="18" Height="18">
-                                        <!-- Окно: рамка и полоса заголовка -->
-                                        <Border Canvas.Left="3.4" Canvas.Top="4.4"
-                                                Width="11.2" Height="9.2" CornerRadius="2.2"
-                                                BorderThickness="1.3" BorderBrush="#FFFFFF"/>
-                                        <Border Canvas.Left="4.7" Canvas.Top="7.3"
-                                                Width="8.6" Height="1.3" Background="#FFFFFF"/>
-                                    </Canvas>
-                                </Border>
+                                <Canvas Style="{StaticResource NavIcon}">
+                                    <!-- Окно: рамка и полоса заголовка -->
+                                    <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
+                                          StrokeThickness="1.3" StrokeLineJoin="Round"
+                                          Data="M 5.4,4.4 H 12.6 A 2,2 0 0 1 14.6,6.4 V 11.6 A 2,2 0 0 1 12.6,13.6 H 5.4 A 2,2 0 0 1 3.4,11.6 V 6.4 A 2,2 0 0 1 5.4,4.4 Z M 3.5,7.8 H 14.5"/>
+                                </Canvas>
                                 <TextBlock Style="{StaticResource NavText}"
                                            Text="{x:Static local:L.NavWindow}"/>
                             </StackPanel>
@@ -184,11 +180,13 @@
                         <RadioButton x:Name="NavMarks" GroupName="Nav" Tag="Marks" AutomationProperties.Name="{x:Static local:L.NavMarks}"
                                      Style="{StaticResource Nav}" Checked="OnNavChecked">
                             <StackPanel Orientation="Horizontal">
-                                <Border Width="18" Height="18" CornerRadius="4.5" Background="#F0A03C">
-                                    <Path Data="M 5.1,5.4 H 12.9 M 9,5.4 V 12.9"
-                                          Stroke="#FFFFFF" StrokeThickness="1.8"
-                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
-                                </Border>
+                                <Canvas Style="{StaticResource NavIcon}">
+                                    <!-- Знаки: надпись -->
+                                    <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
+                                          StrokeThickness="1.7"
+                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                          Data="M 5.2,5.3 H 12.8 M 9,5.3 V 12.9"/>
+                                </Canvas>
                                 <TextBlock Style="{StaticResource NavText}"
                                            Text="{x:Static local:L.NavMarks}"/>
                             </StackPanel>
@@ -197,11 +195,12 @@
                         <RadioButton x:Name="NavGeneral" GroupName="Nav" Tag="General" AutomationProperties.Name="{x:Static local:L.NavGeneral}"
                                      Style="{StaticResource Nav}" Checked="OnNavChecked">
                             <StackPanel Orientation="Horizontal">
-                                <Border Width="18" Height="18" CornerRadius="4.5" Background="#6D7686">
-                                    <!-- Шестерня: восемь зубьев и отверстие в центре -->
-                                    <Path Fill="#FFFFFF"
-                                          Data="F0 M 7.98,3.75 L 10.02,3.75 L 10.15,5.12 L 10.93,5.44 L 11.99,4.56 L 13.44,6.01 L 12.56,7.07 L 12.88,7.85 L 14.25,7.98 L 14.25,10.02 L 12.88,10.15 L 12.56,10.93 L 13.44,11.99 L 11.99,13.44 L 10.93,12.56 L 10.15,12.88 L 10.02,14.25 L 7.98,14.25 L 7.85,12.88 L 7.07,12.56 L 6.01,13.44 L 4.56,11.99 L 5.44,10.93 L 5.12,10.15 L 3.75,10.02 L 3.75,7.98 L 5.12,7.85 L 5.44,7.07 L 4.56,6.01 L 6.01,4.56 L 7.07,5.44 L 7.85,5.12 Z M 7.10,9.00 A 1.90,1.90 0 1 1 10.90,9.00 A 1.90,1.90 0 1 1 7.10,9.00 Z"/>
-                                </Border>
+                                <Canvas Style="{StaticResource NavIcon}">
+                                    <!-- Общие: шестерня -->
+                                    <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
+                                          StrokeThickness="1.2" StrokeLineJoin="Round"
+                                          Data="M 7.98,3.75 L 10.02,3.75 L 10.15,5.12 L 10.93,5.44 L 11.99,4.56 L 13.44,6.01 L 12.56,7.07 L 12.88,7.85 L 14.25,7.98 L 14.25,10.02 L 12.88,10.15 L 12.56,10.93 L 13.44,11.99 L 11.99,13.44 L 10.93,12.56 L 10.15,12.88 L 10.02,14.25 L 7.98,14.25 L 7.85,12.88 L 7.07,12.56 L 6.01,13.44 L 4.56,11.99 L 5.44,10.93 L 5.12,10.15 L 3.75,10.02 L 3.75,7.98 L 5.12,7.85 L 5.44,7.07 L 4.56,6.01 L 6.01,4.56 L 7.07,5.44 L 7.85,5.12 Z M 7.10,9.00 A 1.90,1.90 0 1 1 10.90,9.00 A 1.90,1.90 0 1 1 7.10,9.00 Z"/>
+                                </Canvas>
                                 <TextBlock Style="{StaticResource NavText}"
                                            Text="{x:Static local:L.NavGeneral}"/>
                             </StackPanel>

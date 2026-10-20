@@ -797,6 +797,20 @@
                 Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/>
     </Style>
 
+    <!-- Иконка раздела: монохромный контур в цвет подписи. Канва держит
+         постоянную ширину, чтобы подписи не съезжали, а сам рисунок чуть
+         крупнее — иначе на 100% он выглядит мельче текста. -->
+    <Style x:Key="NavIcon" TargetType="Canvas">
+        <Setter Property="Width" Value="18"/>
+        <Setter Property="Height" Value="18"/>
+        <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+        <Setter Property="RenderTransform">
+            <Setter.Value>
+                <ScaleTransform ScaleX="1.15" ScaleY="1.15"/>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- Строка результата поиска -->
     <Style x:Key="SearchRow" TargetType="Button">
         <Setter Property="Foreground" Value="{DynamicResource Text}"/>
