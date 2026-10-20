@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using MacShot.Settings;
 
 namespace MacShot.Themes;
@@ -81,7 +81,6 @@ internal sealed class ThemePalette
     {
         ("Accent", "#4C8DFF"),
         ("AccentDim", "#2F4E86"),
-        ("AccentGloss", "#33FFFFFF"),
         ("AccentHover", "#6BA1FF"),
         ("AccentPressed", "#3D7BEA"),
         // Полупрозрачная заливка акцентом, которая проявляется под курсором.
@@ -104,7 +103,6 @@ internal sealed class ThemePalette
         ("DangerBg", "#33242B"),
         ("DangerBorder", "#4A2E36"),
         ("DangerText", "#FF8A8A"),
-        ("Gloss", "#14FFFFFF"),
         ("Input", "#1A1A20"),
         ("MockLine", "#FFFFFF"),
         ("MockTitle", "#4A4A59"),
@@ -137,7 +135,6 @@ internal sealed class ThemePalette
     {
         ("Accent", "#2F6FE4"),
         ("AccentDim", "#E3ECFD"),
-        ("AccentGloss", "#4DFFFFFF"),
         ("AccentHover", "#2560CE"),
         ("AccentPressed", "#1E4FAD"),
         ("AccentVeil", "#1F2F6FE4"),
@@ -155,7 +152,6 @@ internal sealed class ThemePalette
         ("DangerBg", "#FBEDEC"),
         ("DangerBorder", "#F0CBC7"),
         ("DangerText", "#C0392B"),
-        ("Gloss", "#B3FFFFFF"),
         ("Input", "#F7F8FA"),
         ("MockLine", "#39404D"),
         ("MockTitle", "#E7EAF0"),

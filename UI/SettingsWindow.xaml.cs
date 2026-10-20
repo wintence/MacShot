@@ -738,8 +738,7 @@ public partial class SettingsWindow : Window
 
             var remove = new Button
             {
-                Content = "✕",
-                Style = (Style)FindResource("IconButton"),
+                Style = (Style)FindResource("CloseButton"),
                 Tag = index,
             };
             remove.Click += OnRemoveMarkClick;
@@ -1401,8 +1400,7 @@ public partial class SettingsWindow : Window
 
             var remove = new Button
             {
-                Content = "✕",
-                Style = (Style)FindResource("IconButton"),
+                Style = (Style)FindResource("CloseButton"),
                 Margin = new Thickness(10, 0, 0, 0),
                 Tag = app,
             };

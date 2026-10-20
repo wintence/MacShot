@@ -2,8 +2,8 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:MacShot.Lang"
-        Width="1160" Height="820"
-        MinWidth="940" MinHeight="620"
+        Width="1040" Height="740"
+        MinWidth="880" MinHeight="560"
         ResizeMode="CanResize"
         WindowStartupLocation="CenterScreen"
         Background="{DynamicResource Bg}"
@@ -21,20 +21,23 @@
              Здесь только то, что принадлежит этому окну. Стили кнопок,
              флажков и ползунков — в UI/Styles.xaml, вместе с анимациями. -->
 
+        <!-- Отступы собраны жёстко и мелко: панель настроек и так
+             прокручивается, а лишний воздух в карточках съедал высоту,
+             не давая поместиться ещё одной секции. -->
         <Style x:Key="Group" TargetType="Border">
             <Setter Property="Background" Value="{DynamicResource Card}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource CardLine}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="12"/>
-            <Setter Property="Padding" Value="18,16"/>
-            <Setter Property="Margin" Value="0,0,0,14"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="14,11"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
         </Style>
 
         <Style x:Key="Caption" TargetType="TextBlock">
             <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
             <Setter Property="FontSize" Value="11"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Margin" Value="0,0,0,8"/>
+            <Setter Property="Margin" Value="0,0,0,4"/>
         </Style>
 
         <Style x:Key="Field" TargetType="Border">
@@ -42,11 +45,11 @@
             <Setter Property="BorderBrush" Value="{DynamicResource CardLine}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="8"/>
-            <Setter Property="Padding" Value="11,7"/>
+            <Setter Property="Padding" Value="9,5"/>
         </Style>
 
         <Style x:Key="Preview" TargetType="Border">
-            <Setter Property="Height" Value="72"/>
+            <Setter Property="Height" Value="58"/>
             <Setter Property="CornerRadius" Value="10"/>
             <Setter Property="BorderBrush" Value="{DynamicResource CardLine}"/>
             <Setter Property="BorderThickness" Value="1"/>
@@ -96,33 +99,33 @@
          Предпросмотр прижат к верху и не уезжает при прокрутке — иначе
          пришлось бы запоминать, куда только что потянули знак.
          Правая колонка — остальные настройки, прокручивается вся. -->
-    <Grid x:Name="RootGrid" Margin="20">
+    <Grid x:Name="RootGrid" Margin="14">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="20"/>
-            <ColumnDefinition Width="420"/>
+            <ColumnDefinition Width="14"/>
+            <ColumnDefinition Width="392"/>
         </Grid.ColumnDefinitions>
 
         <!-- ============ Левая колонка ============ -->
         <Grid Grid.Column="0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="16"/>
+                <RowDefinition Height="12"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
             <Border Grid.Row="0" CornerRadius="12" ClipToBounds="True"
                     BorderBrush="{DynamicResource CardLine}" BorderThickness="1"
-                    MaxHeight="430" VerticalAlignment="Top">
+                    MaxHeight="400" VerticalAlignment="Top">
                 <Border x:Name="WatermarkPreview"/>
             </Border>
 
             <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
                 <StackPanel>
-                    <TextBlock Text="{x:Static local:L.Watermark}" Style="{StaticResource Caption}" Margin="0,0,0,10"/>
+                    <TextBlock Text="{x:Static local:L.Watermark}" Style="{StaticResource Caption}" Margin="0,0,0,7"/>
 
                     <!-- Список добавленных надписей и картинок -->
-                    <StackPanel x:Name="MarkList" Margin="0,0,0,12"/>
+                    <StackPanel x:Name="MarkList" Margin="0,0,0,8"/>
 
                     <StackPanel Orientation="Horizontal">
                         <Button Content="{x:Static local:L.AddText}" Click="OnAddTextMark"
@@ -132,8 +135,8 @@
                     </StackPanel>
 
                     <!-- Редактор выбранного элемента -->
-                    <StackPanel x:Name="MarkEditor" Margin="0,18,0,0" Visibility="Collapsed">
-                        <Border Height="1" Background="{DynamicResource CardLine}" Margin="0,0,0,16"/>
+                    <StackPanel x:Name="MarkEditor" Margin="0,12,0,0" Visibility="Collapsed">
+                        <Border Height="1" Background="{DynamicResource CardLine}" Margin="0,0,0,11"/>
 
                         <TextBlock x:Name="MarkKindLabel" Style="{StaticResource Caption}"/>
 
@@ -350,33 +353,69 @@
                     <StackPanel>
                         <TextBlock Text="{x:Static local:L.Window}" Style="{StaticResource Caption}"/>
 
-                        <TextBlock x:Name="PaddingLabel" Text="{x:Static local:L.Start}"
-                                   Style="{StaticResource Caption}" Margin="0,0,0,6"/>
-                        <Slider x:Name="PaddingSlider" Minimum="0" Maximum="160" Value="40"
-                                ValueChanged="OnValueChanged"/>
+                        <!-- Ползунок с подписью в одну строку. Раньше подпись и ползунок
+             стояли друг под другом, и на каждый из шести уходило вдвое
+             больше места, чем нужно: значение и так написано в подписи,
+             отдельная колонка для него не нужна. -->
+                        <Grid Margin="0,6,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="126"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="PaddingLabel" Grid.Column="0"
+                                       Style="{StaticResource Caption}"
+                                       VerticalAlignment="Center" Margin="0"/>
+                            <Slider x:Name="PaddingSlider" Grid.Column="1"
+                                    Minimum="0" Maximum="160" Value="40"
+                                    ValueChanged="OnValueChanged"/>
+                        </Grid>
 
                         <CheckBox x:Name="ShadowCheck" Content="{x:Static local:L.Shadow}" IsChecked="True"
                                   Checked="OnShadowChanged" Unchecked="OnShadowChanged"
-                                  Cursor="Hand" Margin="0,16,0,0"/>
+                                  Cursor="Hand" Margin="0,11,0,0"/>
 
-                        <TextBlock x:Name="BlurLabel" Text="{x:Static local:L.Start}"
-                                   Style="{StaticResource Caption}" Margin="0,16,0,6"/>
-                        <Slider x:Name="BlurSlider" Minimum="0" Maximum="90" Value="36"
-                                ValueChanged="OnValueChanged"/>
+                        <Grid Margin="0,9,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="126"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="BlurLabel" Grid.Column="0"
+                                       Style="{StaticResource Caption}"
+                                       VerticalAlignment="Center" Margin="0"/>
+                            <Slider x:Name="BlurSlider" Grid.Column="1"
+                                    Minimum="0" Maximum="90" Value="36"
+                                    ValueChanged="OnValueChanged"/>
+                        </Grid>
 
-                        <TextBlock x:Name="OpacityLabel" Text="{x:Static local:L.Start}"
-                                   Style="{StaticResource Caption}" Margin="0,16,0,6"/>
-                        <Slider x:Name="OpacitySlider" Minimum="0" Maximum="100" Value="45"
-                                ValueChanged="OnValueChanged"/>
+                        <Grid Margin="0,9,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="126"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="OpacityLabel" Grid.Column="0"
+                                       Style="{StaticResource Caption}"
+                                       VerticalAlignment="Center" Margin="0"/>
+                            <Slider x:Name="OpacitySlider" Grid.Column="1"
+                                    Minimum="0" Maximum="100" Value="45"
+                                    ValueChanged="OnValueChanged"/>
+                        </Grid>
 
-                        <TextBlock x:Name="OffsetLabel" Text="{x:Static local:L.Start}"
-                                   Style="{StaticResource Caption}" Margin="0,16,0,6"/>
-                        <Slider x:Name="OffsetSlider" Minimum="0" Maximum="60" Value="16"
-                                ValueChanged="OnValueChanged"/>
+                        <Grid Margin="0,9,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="126"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="OffsetLabel" Grid.Column="0"
+                                       Style="{StaticResource Caption}"
+                                       VerticalAlignment="Center" Margin="0"/>
+                            <Slider x:Name="OffsetSlider" Grid.Column="1"
+                                    Minimum="0" Maximum="60" Value="16"
+                                    ValueChanged="OnValueChanged"/>
+                        </Grid>
 
                         <CheckBox x:Name="HideTitleCheck" Content="{x:Static local:L.HideTitleBar}"
                                   IsChecked="False" Checked="OnTitleBarChanged"
-                                  Unchecked="OnTitleBarChanged" Cursor="Hand" Margin="0,18,0,0"/>
+                                  Unchecked="OnTitleBarChanged" Cursor="Hand" Margin="0,13,0,0"/>
 
                         <StackPanel x:Name="TitleBarModePanel" Margin="28,10,0,0">
                             <RadioButton x:Name="TitleAuto" GroupName="TitleMode" Tag="Auto"
@@ -387,25 +426,35 @@
                                          Checked="OnTitleBarChanged" Cursor="Hand" Margin="0"/>
                         </StackPanel>
 
-                        <TextBlock x:Name="TitleBarLabel" Style="{StaticResource Caption}" Margin="0,12,0,6"/>
-                        <Slider x:Name="TitleBarSlider" Minimum="0" Maximum="120" Value="32"
-                                ValueChanged="OnTitleBarChanged"/>
-                        <TextBlock Style="{StaticResource Caption}" Margin="0,8,0,0" TextWrapping="Wrap"
+                        <Grid Margin="0,9,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="126"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="TitleBarLabel" Grid.Column="0"
+                                       Style="{StaticResource Caption}"
+                                       VerticalAlignment="Center" Margin="0"/>
+                            <Slider x:Name="TitleBarSlider" Grid.Column="1"
+                                    Minimum="0" Maximum="120" Value="32"
+                                    ValueChanged="OnTitleBarChanged"/>
+                        </Grid>
+                        <TextBlock Style="{StaticResource Caption}" Margin="0,6,0,0" TextWrapping="Wrap"
                                    Text="{x:Static local:L.HideTitleBarHint}"/>
 
                         <!-- Своя высота для отдельных приложений. Список
                              наполняется либо сам после снимка, либо вручную -->
-                        <Grid Margin="0,16,0,8">
+                        <Grid Margin="0,11,0,6">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock x:Name="AppOverridesCaption" Text="{x:Static local:L.PerApp}"
-                                       Style="{StaticResource Caption}" Margin="0"/>
+                                       Style="{StaticResource Caption}" Margin="0"
+                                       VerticalAlignment="Center"/>
                             <Button Grid.Column="1" x:Name="AddAppButton"
                                     Content="{x:Static local:L.AddApp}"
                                     Style="{StaticResource Button}" Click="OnAddAppOverride"
-                                    Padding="14,5"/>
+                                    Padding="12,5" Margin="10,0,0,0"/>
                         </Grid>
                         <StackPanel x:Name="AppOverrides" Margin="0,0,0,0"/>
                         <TextBlock x:Name="AppOverridesEmpty" Text="{x:Static local:L.PerAppEmpty}"
@@ -423,14 +472,14 @@
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <Border Grid.Column="0" Style="{StaticResource Field}" Padding="13,10">
+                            <Border Grid.Column="0" Style="{StaticResource Field}" Padding="11,8">
                                 <TextBlock x:Name="HotKeyLabel" Text="Ctrl+Shift+8" FontWeight="SemiBold"/>
                             </Border>
                             <Button Grid.Column="1" Content="{x:Static local:L.SetHotKey}" Click="OnSetHotKey"
-                                    Style="{StaticResource Button}" Margin="10,0,0,0"/>
+                                    Style="{StaticResource Button}" Margin="8,0,0,0"/>
                         </Grid>
                         <TextBlock x:Name="HotKeyStatus" Style="{StaticResource Caption}"
-                                   Margin="0,10,0,0" TextWrapping="Wrap"/>
+                                   Margin="0,8,0,0" TextWrapping="Wrap"/>
                     </StackPanel>
                 </Border>
 
