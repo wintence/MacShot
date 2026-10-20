@@ -6,6 +6,11 @@ where it is started from.
 
 ## Steps
 
+0. **Ask before publishing.** Nothing goes to GitHub — no push, no
+   release, no asset — until the user says so explicitly for that
+   release. Building locally and showing screenshots is fine; uploading
+   is not. This was said out loud after a release went out unasked.
+
 1. Update the version in both places. They are separate on purpose: one is
    what the window title shows, the other is what the executable reports.
 

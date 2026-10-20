@@ -471,6 +471,11 @@
 
     <Style TargetType="Slider">
         <Setter Property="Height" Value="20"/>
+        <!-- Своя подсказка значения не нужна: число уже стоит в подписи
+             слева и обновляется на каждом шаге. Системная же рисуется
+             светлым прямоугольником поверх тёмной карточки и выглядит
+             как белое пятно, наползающее на большой палец. -->
+        <Setter Property="AutoToolTipPlacement" Value="None"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Slider">

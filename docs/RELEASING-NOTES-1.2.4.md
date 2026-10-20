@@ -1,6 +1,6 @@
 ## Buttons stop cutting their own labels
 
-Look at any button in 1.2.3 from close up: the bottom of the text is sheared off flat. "Добавить надпись", "Задать…", "Готово" — all of them were missing the last couple of pixels of every letter, and descenders like the tail of "у" disappeared entirely.
+Look at any button in 1.2.3 from close up: the bottom of the text is sheared off flat. "Add text", "Change:", "Done" — all of them were missing the last couple of pixels of every letter, and descenders on letters like "y" disappeared entirely.
 
 The cause was in the button template. The drop shadow sat on the same element that holds the label, and that element also carried a scale transform for the press animation. WPF cannot composite an effect and a transform on one element directly, so it renders the whole button into an off-screen bitmap first — and that bitmap came out a fraction of a pixel short, clipping the content along the bottom edge.
 
