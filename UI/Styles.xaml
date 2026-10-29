@@ -30,6 +30,7 @@
          а сеттер неявного стиля перебил бы наследование и покрасил всё
          в один цвет. Базовый цвет задаёт окно. -->
     <Style TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="Cascadia Mono, Consolas"/>
         <Setter Property="FontSize" Value="13"/>
         <Setter Property="TextOptions.TextFormattingMode" Value="Ideal"/>
     </Style>
@@ -69,7 +70,7 @@
                              линии. Раздельные слои это убирают. -->
                         <!-- Заливка -->
                         <Border x:Name="Fill" Background="{TemplateBinding Background}"
-                                CornerRadius="8" SnapsToDevicePixels="True"/>
+                                CornerRadius="9" SnapsToDevicePixels="True"/>
 
                         <!-- Вуаль наведения: полупрозрачный акцент поверх
                              всей заливки. Анимируется только прозрачность.
@@ -77,13 +78,13 @@
                              внутри них он красил только прямоугольник вокруг
                              надписи, и кнопка синела не вся. -->
                         <Border x:Name="Veil" Background="{DynamicResource AccentVeil}"
-                                CornerRadius="8" Opacity="0"/>
+                                CornerRadius="9" Opacity="0"/>
 
                         <!-- Рамка и содержимое -->
                         <Border x:Name="B"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="8"
+                                CornerRadius="9"
                                 SnapsToDevicePixels="True">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
                                             Margin="{TemplateBinding Padding}"/>
@@ -152,6 +153,13 @@
                             </BeginStoryboard>
                         </EventTrigger>
 
+                        <!-- Рамка под курсором: у buttons scenario22 подсвечена
+                             и линия, а не только заливка. -->
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="B" Property="BorderBrush"
+                                    Value="{DynamicResource ButtonBorderHover}"/>
+                        </Trigger>
+
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="Root" Property="Opacity" Value="0.45"/>
                         </Trigger>
@@ -181,10 +189,10 @@
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="1"
-                                CornerRadius="7">
+                                CornerRadius="999">
                             <Grid>
                                 <Border x:Name="Veil" Background="{DynamicResource AccentVeil}"
-                                        CornerRadius="7" Opacity="0"/>
+                                        CornerRadius="999" Opacity="0"/>
                                 <Path x:Name="Cross"
                                       Data="M 1,1 L 9,9 M 9,1 L 1,9"
                                       Stroke="{TemplateBinding Foreground}"
@@ -382,7 +390,7 @@
                         <Grid.RenderTransform>
                             <ScaleTransform x:Name="S" ScaleX="1" ScaleY="1"/>
                         </Grid.RenderTransform>
-                        <Border Width="6" Height="18" CornerRadius="3"
+                        <Border Width="4" Height="14" CornerRadius="2"
                                 Background="{DynamicResource SliderKnob}"
                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Grid>
@@ -424,7 +432,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RepeatButton">
-                    <Border Height="3" CornerRadius="1.5" Margin="0,0,-1,0"
+                    <Border Height="2.5" CornerRadius="1.25" Margin="0,0,-1,0"
                             Background="{DynamicResource Accent}"
                             VerticalAlignment="Center"/>
                 </ControlTemplate>
@@ -438,7 +446,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RepeatButton">
-                    <Border Height="3" CornerRadius="1.5" Margin="-1,0,0,0"
+                    <Border Height="2.5" CornerRadius="1.25" Margin="-1,0,0,0"
                             Background="{DynamicResource TrackBg}"
                             VerticalAlignment="Center"/>
                 </ControlTemplate>
@@ -512,10 +520,12 @@
                                           Margin="0,0,12,0"/>
 
                         <Border x:Name="Track" Grid.Column="1"
-                                Width="38" Height="22" CornerRadius="11"
+                                Width="36" Height="20" CornerRadius="10"
+                                BorderBrush="Transparent"
+                                BorderThickness="0"
                                 Background="{DynamicResource ToggleOff}"
                                 VerticalAlignment="Center">
-                            <Border x:Name="Knob" Width="18" Height="18" CornerRadius="9"
+                            <Border x:Name="Knob" Width="16" Height="16" CornerRadius="8"
                                     Background="{DynamicResource ToggleKnob}"
                                     HorizontalAlignment="Left" Margin="2,0,0,0">
                                 <Border.RenderTransform>
@@ -680,15 +690,15 @@
     <!-- Системная подсказка светлая в обеих темах и в тёмном окне светит
          белым пятном. Своя повторяет карточку: та же заливка, та же линия. -->
     <Style TargetType="ToolTip">
-        <Setter Property="Foreground" Value="{DynamicResource Text}"/>
+        <Setter Property="Foreground" Value="{DynamicResource ToolTipFg}"/>
         <Setter Property="FontSize" Value="11.5"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ToolTip">
-                    <Border Background="{DynamicResource Card}"
-                            BorderBrush="{DynamicResource CardLine}"
-                            BorderThickness="1" CornerRadius="6"
-                            Padding="8,4">
+                    <Border Background="{DynamicResource ToolTipBg}"
+                            BorderBrush="Transparent"
+                            BorderThickness="1" CornerRadius="8"
+                            Padding="9,5">
                         <ContentPresenter/>
                     </Border>
                 </ControlTemplate>
@@ -700,19 +710,19 @@
          Карточки настроек
          ================================================================ -->
 
-    <!-- Карточка-группа. Без рамки: в тёмной теме карточка светлее фона,
-         и одной заливки хватает, чтобы отделить её от страницы. -->
+    <!-- Карточка-группа. Без рамки и без тени: на глубоком графите карточка
+         чуть светлее страницы, и этого достаточно — воздух делает работу. -->
     <Style x:Key="CardBox" TargetType="Border">
         <Setter Property="Background" Value="{DynamicResource Card}"/>
-        <Setter Property="CornerRadius" Value="10"/>
-        <Setter Property="Margin" Value="0,0,0,12"/>
+        <Setter Property="CornerRadius" Value="12"/>
+        <Setter Property="Margin" Value="0,0,0,14"/>
         <Setter Property="SnapsToDevicePixels" Value="True"/>
     </Style>
 
     <Style x:Key="CardTitle" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="FontSize" Value="15"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
-        <Setter Property="Margin" Value="14,12,14,6"/>
+        <Setter Property="Margin" Value="16,14,16,8"/>
     </Style>
 
     <Style x:Key="RowLabel" TargetType="TextBlock">
@@ -737,30 +747,51 @@
          Боковая панель настроек
          ================================================================ -->
 
-    <!-- Пункт списка разделов. Выбранный заливается акцентом целиком:
-         так видно, на какой странице находишься, даже боковым зрением. -->
+    <!-- Пункт списка разделов. «Тихая» отметка выбора: узкая янтарная
+         полоска слева, фон строки не трогаем — приглушённый текст на
+         покое, полный цвет под курсором и на выбранном. -->
     <Style x:Key="Nav" TargetType="RadioButton">
-        <Setter Property="Foreground" Value="{DynamicResource Text}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
         <Setter Property="Cursor" Value="Hand"/>
-        <Setter Property="Margin" Value="0,1"/>
+        <Setter Property="Margin" Value="0,2"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
                     <Grid Background="Transparent">
-                        <Border x:Name="Sel" CornerRadius="7"
-                                Background="{DynamicResource Accent}" Opacity="0"/>
-                        <Border x:Name="Hover" CornerRadius="7"
+                        <Border x:Name="Hover" CornerRadius="8"
                                 Background="{DynamicResource NavHover}" Opacity="0"/>
-                        <ContentPresenter Margin="9,6" VerticalAlignment="Center"/>
+                        <Border x:Name="Bar" Width="3" HorizontalAlignment="Left"
+                                CornerRadius="2" Margin="1,0,0,0"
+                                Background="{DynamicResource Accent}" Opacity="0"/>
+                        <ContentPresenter Margin="16,8" VerticalAlignment="Center"/>
                     </Grid>
 
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="Sel" Property="Opacity" Value="1"/>
-                            <Setter Property="Foreground" Value="#FFFFFF"/>
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="Bar"
+                                                         Storyboard.TargetProperty="Opacity"
+                                                         To="1" Duration="0:0:0.14"
+                                                         EasingFunction="{StaticResource EaseOut}"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="Bar"
+                                                         Storyboard.TargetProperty="Opacity"
+                                                         To="0" Duration="0:0:0.2"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                            <Setter Property="Foreground" Value="{DynamicResource Text}"/>
                         </Trigger>
 
                         <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Foreground" Value="{DynamicResource Text}"/>
                             <Trigger.EnterActions>
                                 <BeginStoryboard>
                                     <Storyboard>
@@ -821,7 +852,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Grid Background="Transparent">
-                        <Border x:Name="Hover" CornerRadius="7"
+                        <Border x:Name="Hover" CornerRadius="8"
                                 Background="{DynamicResource NavHover}" Opacity="0"/>
                         <ContentPresenter Margin="9,6" VerticalAlignment="Center"
                                           HorizontalAlignment="Left"/>
@@ -843,7 +874,7 @@
         <Setter Property="Foreground" Value="{DynamicResource Text}"/>
         <Setter Property="CaretBrush" Value="{DynamicResource Text}"/>
         <Setter Property="SelectionBrush" Value="{DynamicResource Accent}"/>
-        <Setter Property="FontFamily" Value="Segoe UI, system-ui"/>
+        <Setter Property="FontFamily" Value="Cascadia Mono, Consolas"/>
         <Setter Property="FontSize" Value="12.5"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
         <Setter Property="Template">
@@ -864,7 +895,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
-                    <Border x:Name="Ring" CornerRadius="9" BorderThickness="2"
+                    <Border x:Name="Ring" CornerRadius="10" BorderThickness="2"
                             BorderBrush="Transparent" Padding="2" Background="Transparent">
                         <ContentPresenter/>
                     </Border>
@@ -893,7 +924,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="Thumb">
                     <Border x:Name="B" Background="{DynamicResource ScrollThumbBg}"
-                            CornerRadius="4" Margin="3,0" Opacity="0.55"/>
+                            CornerRadius="5" Margin="3,0" Opacity="0.55"/>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Trigger.EnterActions>
@@ -923,7 +954,7 @@
 
     <Style TargetType="ScrollBar">
         <Setter Property="Background" Value="Transparent"/>
-        <Setter Property="Width" Value="12"/>
+        <Setter Property="Width" Value="10"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ScrollBar">
@@ -967,10 +998,10 @@
                                 <ControlTemplate TargetType="ToggleButton">
                                     <Border x:Name="F" Background="{DynamicResource Input}"
                                             BorderBrush="{DynamicResource CardLine}" BorderThickness="1"
-                                            CornerRadius="8"/>
+                                            CornerRadius="9"/>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="F" Property="BorderBrush" Value="{DynamicResource Accent}"/>
+                                            <Setter TargetName="F" Property="BorderBrush" Value="{DynamicResource ButtonBorderHover}"/>
                                         </Trigger>
                                     </ControlTemplate.Triggers>
                                 </ControlTemplate>
@@ -998,7 +1029,7 @@
                                IsOpen="{TemplateBinding IsDropDownOpen}" PopupAnimation="Slide">
                             <Border x:Name="Drop" Background="{DynamicResource Surface}"
                                     BorderBrush="{DynamicResource CardLine}"
-                                    BorderThickness="1" CornerRadius="10"
+                                    BorderThickness="1" CornerRadius="12"
                                     Margin="0,6,0,0" MinWidth="{TemplateBinding ActualWidth}"
                                     MaxHeight="260" RenderTransformOrigin="0.5,0">
                                 <Border.Effect>
@@ -1063,7 +1094,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ComboBoxItem">
-                    <Border x:Name="B" Background="Transparent" CornerRadius="6"
+                    <Border x:Name="B" Background="Transparent" CornerRadius="7"
                             Margin="3,2" Padding="{TemplateBinding Padding}">
                         <ContentPresenter/>
                     </Border>

@@ -53,15 +53,11 @@ public partial class SettingsWindow : Window
         _pages["Marks"] = PageMarks;
         _pages["General"] = PageGeneral;
 
-        // Пропорции рамки постоянны, а ширина колонки — нет: высота
-        // предпросмотра подгоняется под неё, иначе кадр либо не влезал,
-        // либо оставлял по бокам пустые полосы.
-        PreviewFrame.SizeChanged += (_, _) =>
-        {
-            double width = PreviewFrame.ActualWidth;
-            if (width > 0)
-                WatermarkPreview.Height = Math.Round(width / 1.5789);
-        };
+        // Пропорции рамки постоянны, а колонка — нет: кадр вписывается в
+        // неё по ширине, но не должен вылезать и по высоте, когда окно
+        // широкое и низкое.
+        PreviewFrame.SizeChanged += (_, _) => SizePreview();
+        PreviewArea.SizeChanged += (_, _) => SizePreview();
 
         // Окно без системной рамки: скругляем его углы средствами DWM,
         // как у обычного окна Windows 11.
@@ -78,6 +74,29 @@ public partial class SettingsWindow : Window
         Closed += (_, _) => Themes.Theme.Changed -= OnThemeChanged;
 
         Load();
+    }
+
+    /// <summary>
+    /// Вписывает кадр предпросмотра в отведённую область с постоянной
+    /// пропорцией 1200:760: берёт меньшую из ширин — по колонке и по
+    /// высоте области, — иначе на широком окне кадр упирался бы в низ.
+    /// Переприсвоение тех же размеров WPF игнорирует, поэтому цикл из
+    /// SizeChanged гарантирует одну итерацию.
+    /// </summary>
+    private void SizePreview()
+    {
+        double width = PreviewArea.ActualWidth;
+        double height = PreviewArea.ActualHeight;
+        if (width <= 0 || height <= 0)
+            return;
+
+        double frameWidth = Math.Min(width, height * 1.5789);
+        double frameHeight = Math.Round(frameWidth / 1.5789);
+
+        if (Math.Abs(WatermarkPreview.Width - frameWidth) > 0.5)
+            WatermarkPreview.Width = frameWidth;
+        if (Math.Abs(WatermarkPreview.Height - frameHeight) > 0.5)
+            WatermarkPreview.Height = frameHeight;
     }
 
     /// <summary>Язык сменили — окно нужно пересоздать.</summary>
@@ -998,7 +1017,7 @@ public partial class SettingsWindow : Window
         if (width <= 0 || height <= 0)
             return;
 
-        WatermarkPreview.Clip = new RectangleGeometry(new Rect(0, 0, width, height), 11, 11);
+        WatermarkPreview.Clip = new RectangleGeometry(new Rect(0, 0, width, height), 13, 13);
     }
 
     /// <summary>
@@ -1303,7 +1322,7 @@ public partial class SettingsWindow : Window
     private static void MarkRowSelected(Border row)
     {
         ResourceLink(row, Control.BackgroundProperty, "RowSelected");
-        ResourceLink(row, Border.BorderBrushProperty, "Accent");
+        ResourceLink(row, Border.BorderBrushProperty, "CardLine");
     }
 
     private static void MarkRowPlain(Border row)

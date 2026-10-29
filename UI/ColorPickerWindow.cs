@@ -33,7 +33,7 @@ internal sealed class ColorPickerWindow : Window
         // Сдержанные подсветки
         "#DCE6F5", "#E5E0F5", "#F5E6DC", "#DCF0E5", "#F0DCEA", "#E2F0F5",
         // Насыщенные
-        "#4C8DFF", "#5B8DEF", "#7C4DFF", "#00BFA5", "#4CAF50",
+        "#6B97FF", "#4C82FF", "#7C4DFF", "#00BFA5", "#4CAF50",
         "#FFB020", "#FF7043", "#EF5350", "#EC407A", "#8BC34A",
         // Тёмные
         "#2A2A33", "#3A3A47", "#1C1C22",
@@ -73,7 +73,7 @@ internal sealed class ColorPickerWindow : Window
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         Background = _bg;
         Foreground = _text;
-        FontFamily = new FontFamily("Segoe UI, system-ui");
+        FontFamily = new FontFamily("Cascadia Mono, Consolas");
         ShowInTaskbar = false;
 
         // Свой заголовок вместо системного: иначе у тёмного окна остаётся
@@ -168,7 +168,7 @@ internal sealed class ColorPickerWindow : Window
             Width = 36,
             Height = 30,
             Margin = new Thickness(0, 0, 8, 8),
-            CornerRadius = new CornerRadius(6),
+            CornerRadius = new CornerRadius(7),
             Background = Frozen(hex),
             BorderBrush = dark ? _controlLine : _line,
             BorderThickness = new Thickness(1),

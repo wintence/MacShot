@@ -55,7 +55,7 @@ internal sealed class PickerOverlay : Window
 
         _highlight = new Border
         {
-            BorderBrush = new SolidColorBrush(Color.FromRgb(0x4C, 0x6E, 0xF5)),
+            BorderBrush = new SolidColorBrush(Color.FromRgb(0x6B, 0x97, 0xFF)),
             BorderThickness = new Thickness(2.5),
             Background = Brushes.Transparent,
             CornerRadius = new CornerRadius(8),
