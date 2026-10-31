@@ -16,12 +16,16 @@ internal sealed class TrayIcon : IDisposable
     private readonly NotifyIcon _icon;
     private readonly ContextMenuStrip _menu;
     private readonly ToolStripMenuItem _hotKeyItem;
+    private readonly ToolStripMenuItem _regionHotKeyItem;
     private readonly ToolStripMenuItem _captureItem;
+    private readonly ToolStripMenuItem _regionCaptureItem;
     private readonly ToolStripMenuItem _settingsItem;
     private readonly ToolStripMenuItem _exitItem;
     private string? _activeGesture;
+    private string? _activeRegionGesture;
 
     public event Action? CaptureRequested;
+    public event Action? RegionCaptureRequested;
     public event Action? SettingsRequested;
     public event Action? ExitRequested;
 
@@ -34,14 +38,18 @@ internal sealed class TrayIcon : IDisposable
     public TrayIcon()
     {
         _hotKeyItem = new ToolStripMenuItem { Enabled = false };
+        _regionHotKeyItem = new ToolStripMenuItem { Enabled = false };
 
         _captureItem = new ToolStripMenuItem(L.TrayCapture, null, (_, _) => CaptureRequested?.Invoke());
+        _regionCaptureItem = new ToolStripMenuItem(L.TrayRegion, null, (_, _) => RegionCaptureRequested?.Invoke());
         _settingsItem = new ToolStripMenuItem(L.TraySettings, null, (_, _) => SettingsRequested?.Invoke());
         _exitItem = new ToolStripMenuItem(L.TrayExit, null, (_, _) => ExitRequested?.Invoke());
 
         _menu = new ContextMenuStrip();
         _menu.Items.Add(_captureItem);
+        _menu.Items.Add(_regionCaptureItem);
         _menu.Items.Add(_hotKeyItem);
+        _menu.Items.Add(_regionHotKeyItem);
         _menu.Items.Add(new ToolStripSeparator());
         _menu.Items.Add(_settingsItem);
         _menu.Items.Add(_exitItem);
@@ -61,10 +69,12 @@ internal sealed class TrayIcon : IDisposable
     public void ApplyLanguage()
     {
         _captureItem.Text = L.TrayCapture;
+        _regionCaptureItem.Text = L.TrayRegion;
         _settingsItem.Text = L.TraySettings;
         _exitItem.Text = L.TrayExit;
         _icon.Text = L.AppName;
         SetHotKey(_activeGesture);
+        SetRegionHotKey(_activeRegionGesture);
     }
 
     public void SetHotKey(string? gesture)
@@ -74,6 +84,16 @@ internal sealed class TrayIcon : IDisposable
         _hotKeyItem.Text = string.IsNullOrWhiteSpace(gesture)
             ? I18n.Current["tray.hotkeyNone"]
             : I18n.Format("tray.hotkey", HotKeyService.Friendly(gesture));
+    }
+
+    /// <summary>Пустая строка — хоткей области отключён.</summary>
+    public void SetRegionHotKey(string? gesture)
+    {
+        _activeRegionGesture = gesture;
+
+        _regionHotKeyItem.Text = string.IsNullOrWhiteSpace(gesture)
+            ? I18n.Current["tray.regionHotkeyNone"]
+            : I18n.Format("tray.regionHotkey", HotKeyService.Friendly(gesture));
     }
 
     /// <summary>Всплывающее уведомление — для ошибок горячей клавиши.</summary>

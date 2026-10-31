@@ -14,12 +14,16 @@ namespace MacShot.Services;
 /// </summary>
 internal sealed class HotKeyService : IDisposable
 {
-    private const int HotKeyId = 0x574E; // 'WN'
+    /// <summary>'WN' — «снять окно», 'WO' — «снять область».</summary>
+    public const int WindowHotKeyId = 0x574E;
+    public const int RegionHotKeyId = 0x574F;
+
     private const int WmHotKey = 0x0312;
 
     private readonly HwndSource _source;
-    private Action? _onPressed;
-    private bool _registered;
+
+    /// <summary>Что и на каком id сейчас зарегистрировано.</summary>
+    private readonly Dictionary<int, (bool Registered, Action? OnPressed)> _byId = new();
 
     public HotKeyService()
     {
@@ -36,18 +40,15 @@ internal sealed class HotKeyService : IDisposable
         _source.AddHook(WndProc);
     }
 
-    public string? ActiveGesture { get; private set; }
-
-    /// <summary>Последняя ошибка регистрации — показывается пользователю.</summary>
     public string? LastError { get; private set; }
 
     /// <summary>
-    /// Регистрирует сочетание. Возвращает false, если клавишу уже держит
-    /// другая программа.
+    /// Регистрирует сочетание под данным id. Возвращает false, если клавишу
+    /// уже держит другая программа.
     /// </summary>
-    public bool Register(string gesture, Action onPressed)
+    public bool Register(int id, string gesture, Action onPressed)
     {
-        Unregister();
+        Unregister(id);
 
         if (!TryParse(gesture, out uint modifiers, out Key key))
         {
@@ -57,47 +58,37 @@ internal sealed class HotKeyService : IDisposable
 
         var vk = (uint)KeyInterop.VirtualKeyFromKey(key);
 
-        _onPressed = onPressed;
-
         // MOD_NOREPEAT здесь не используем: на этой машине с ним сочетание
         // считалось занятым там, где без него регистрация проходила.
-        _registered = Native.RegisterHotKey(_source.Handle, HotKeyId, modifiers, vk);
+        var registered = Native.RegisterHotKey(_source.Handle, id, modifiers, vk);
 
-        if (_registered)
-        {
-            ActiveGesture = gesture;
+        _byId[id] = (registered, onPressed);
+
+        if (registered)
             LastError = null;
-        }
         else
-        {
-            ActiveGesture = null;
             LastError = Marshal.GetLastWin32Error() == Native.ERROR_HOTKEY_ALREADY_REGISTERED
                 ? I18n.Current["notify.hotkeyBusy"]
                 : I18n.Current["notify.hotkeyFailed"];
-        }
 
-        return _registered;
+        return registered;
     }
 
-    public void Unregister()
+    public void Unregister(int id)
     {
-        if (_registered)
-        {
-            Native.UnregisterHotKey(_source.Handle, HotKeyId);
-            _registered = false;
-        }
+        if (_byId.TryGetValue(id, out var entry) && entry.Registered)
+            Native.UnregisterHotKey(_source.Handle, id);
 
-        ActiveGesture = null;
-        _onPressed = null;
+        _byId.Remove(id);
     }
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
-        if (msg == WmHotKey && wParam.ToInt32() == HotKeyId)
+        if (msg == WmHotKey && _byId.TryGetValue(wParam.ToInt32(), out var entry))
         {
             handled = true;
-            AppLog.Write("WM_HOTKEY received");
-            _onPressed?.Invoke();
+            AppLog.Write($"WM_HOTKEY received, id {wParam}");
+            entry.OnPressed?.Invoke();
         }
 
         return IntPtr.Zero;
@@ -201,7 +192,10 @@ internal sealed class HotKeyService : IDisposable
 
     public void Dispose()
     {
-        Unregister();
+        // Снимаем регистрации до закрытия источника, иначе система
+        // держала бы хоткеи за уже уничтоженное окно
+        Unregister(WindowHotKeyId);
+        Unregister(RegionHotKeyId);
         _source.RemoveHook(WndProc);
         _source.Dispose();
     }

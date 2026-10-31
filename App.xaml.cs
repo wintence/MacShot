@@ -99,6 +99,7 @@ public partial class App : Application
 
         _tray = new TrayIcon();
         _tray.CaptureRequested += BeginCapture;
+        _tray.RegionCaptureRequested += BeginRegionCapture;
         _tray.SettingsRequested += ShowSettings;
         _tray.ExitRequested += ExitApp;
 
@@ -180,6 +181,18 @@ public partial class App : Application
         try
         {
             _controller?.BeginCapture();
+        }
+        catch (Exception ex)
+        {
+            _tray?.Notify("MacShot", ex.Message, true);
+        }
+    }
+
+    private void BeginRegionCapture()
+    {
+        try
+        {
+            _controller?.BeginRegionCapture();
         }
         catch (Exception ex)
         {

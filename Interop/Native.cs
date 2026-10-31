@@ -114,6 +114,46 @@ internal static class Native
         }
     }
 
+    // Монитор и его эффективный DPI нужны там, где hwnd нет: так бывает у
+    // области экрана, растянутой мышью, — она может не лежать ни в одном окне.
+    [DllImport("user32.dll")]
+    private static extern IntPtr MonitorFromRect(ref RECT rect, uint flags);
+
+    private const uint MONITOR_DEFAULTTONEAREST = 2;
+
+    private const int MDT_EFFECTIVE_DPI = 0;
+
+    [DllImport("shcore.dll")]
+    private static extern int GetDpiForMonitor(IntPtr hmonitor, int dpiType,
+        out uint dpiX, out uint dpiY);
+
+    /// <summary>
+    /// Масштаб монитора, на котором лежит указанный прямоугольник, — 1.0, 1.25, 1.5…
+    /// При неудаче возвращаем 1.0: отступ выйдет чуть другого размера, но рисунок
+    /// останется корректным.
+    /// </summary>
+    public static double GetScaleAtRect(RECT rect)
+    {
+        try
+        {
+            var probe = rect;
+            var monitor = MonitorFromRect(ref probe, MONITOR_DEFAULTTONEAREST);
+
+            if (monitor != IntPtr.Zero &&
+                GetDpiForMonitor(monitor, MDT_EFFECTIVE_DPI, out uint dpiX, out uint _) == 0 &&
+                dpiX > 0)
+            {
+                return dpiX / 96.0;
+            }
+        }
+        catch
+        {
+            // shcore недоступна или монитор не найден — ниже откат на 100%
+        }
+
+        return 1.0;
+    }
+
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
     private static extern bool QueryFullProcessImageName(
         IntPtr process, uint flags, System.Text.StringBuilder name, ref uint size);

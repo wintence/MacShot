@@ -310,6 +310,8 @@ public partial class SettingsWindow : Window
         ("set.btnRemove", "Marks"),
 
         ("set.hotkey", "General"),
+        ("set.hotkeyWindow", "General"),
+        ("set.hotkeyRegion", "General"),
         ("set.setHotkey", "General"),
         ("set.saveCopy", "General"),
         ("set.startup", "General"),
@@ -545,6 +547,7 @@ public partial class SettingsWindow : Window
         StartupCheck.IsChecked = _settings.RunAtStartup;
 
         HotKeyLabel.Text = HotKeyService.Friendly(_settings.HotKey);
+        RegionHotKeyLabel.Text = HotKeyService.Friendly(_settings.RegionHotKey);
 
         LangRu.IsChecked = _settings.Language == UiLanguage.Russian;
         LangEn.IsChecked = _settings.Language == UiLanguage.English;
@@ -2382,6 +2385,19 @@ public partial class SettingsWindow : Window
 
         _settings.HotKey = dialog.PreparedGesture;
         HotKeyLabel.Text = HotKeyService.Friendly(_settings.HotKey);
+
+        Persist();
+    }
+
+    private void OnSetRegionHotKey(object sender, RoutedEventArgs e)
+    {
+        var dialog = new HotKeyDialog(_settings.RegionHotKey) { Owner = this };
+
+        if (dialog.ShowDialog() != true)
+            return;
+
+        _settings.RegionHotKey = dialog.PreparedGesture;
+        RegionHotKeyLabel.Text = HotKeyService.Friendly(_settings.RegionHotKey);
 
         Persist();
     }

@@ -671,7 +671,10 @@
                                     <TextBlock Text="{x:Static local:L.HotKey}"
                                                Style="{StaticResource CardTitle}"/>
 
-                                    <Grid Margin="14,4,14,14">
+                                    <TextBlock x:Name="HotKeyWindowLabel" Text="{x:Static local:L.HotKeyWindow}"
+                                               Style="{StaticResource RowLabel}" Margin="14,2,14,6"/>
+
+                                    <Grid Margin="14,0,14,12">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="Auto"/>
@@ -682,6 +685,23 @@
                                         </Border>
                                         <Button Grid.Column="1" Content="{x:Static local:L.SetHotKey}"
                                                 Click="OnSetHotKey" Style="{StaticResource Button}"
+                                                Margin="8,0,0,0"/>
+                                    </Grid>
+
+                                    <TextBlock x:Name="HotKeyRegionLabel" Text="{x:Static local:L.HotKeyRegion}"
+                                               Style="{StaticResource RowLabel}" Margin="14,2,14,6"/>
+
+                                    <Grid Margin="14,0,14,14">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Grid.Column="0" Style="{StaticResource Field}" Padding="9,6">
+                                            <TextBlock x:Name="RegionHotKeyLabel" Text="Ctrl+Shift+9"
+                                                       FontWeight="SemiBold"/>
+                                        </Border>
+                                        <Button Grid.Column="1" Content="{x:Static local:L.SetHotKey}"
+                                                Click="OnSetRegionHotKey" Style="{StaticResource Button}"
                                                 Margin="8,0,0,0"/>
                                     </Grid>
                                 </StackPanel>

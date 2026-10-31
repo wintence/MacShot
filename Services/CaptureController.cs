@@ -19,6 +19,7 @@ namespace MacShot.Services;
 internal sealed class CaptureController : IDisposable
 {
     private readonly PickerOverlay _overlay = new();
+    private readonly RegionOverlay _regionOverlay = new();
     private readonly HotKeyService _hotKey = new();
     private readonly AppSettings _settings;
     private readonly TrayIcon _tray;
@@ -33,28 +34,94 @@ internal sealed class CaptureController : IDisposable
 
         _overlay.Picked += OnPicked;
         _overlay.Cancelled += () => _tray.Notify(L.AppName, I18n.Current["notify.cancelled"], false);
+
+        _regionOverlay.Picked += OnRegionPicked;
+        _regionOverlay.Cancelled += () => _tray.Notify(L.AppName, I18n.Current["notify.cancelled"], false);
     }
 
     public void RegisterHotKey()
     {
-        bool ok = _hotKey.Register(_settings.HotKey, BeginCapture);
+        bool windowOk = _hotKey.Register(HotKeyService.WindowHotKeyId, _settings.HotKey, BeginCapture);
 
         AppLog.Write($"hotkey {_settings.HotKey}: " +
-                     (ok ? "registered" : "FAILED - " + _hotKey.LastError));
+                     (windowOk ? "registered" : "FAILED - " + _hotKey.LastError));
 
-        if (ok)
-        {
-            _tray.SetHotKey(_settings.HotKey);
-            return;
-        }
+        // Пустое сочетание означает готовый хоткей области: просто не регситрируем
+        string? regionGesture = string.IsNullOrWhiteSpace(_settings.RegionHotKey)
+            ? null
+            : _settings.RegionHotKey;
 
-        _tray.SetHotKey(null);
-        _tray.Notify(L.AppName, _hotKey.LastError ?? I18n.Current["notify.hotkeyFailed"], true);
+        bool regionOk = regionGesture is null ||
+                        _hotKey.Register(HotKeyService.RegionHotKeyId, regionGesture, BeginRegionCapture);
+
+        if (regionGesture is { } g)
+            AppLog.Write($"region hotkey {g}: " +
+                         (regionOk ? "registered" : "FAILED - " + _hotKey.LastError));
+
+        _tray.SetHotKey(windowOk ? _settings.HotKey : null);
+        _tray.SetRegionHotKey(regionOk ? regionGesture : null);
+
+        if (!windowOk)
+            _tray.Notify(L.AppName, _hotKey.LastError ?? I18n.Current["notify.hotkeyFailed"], true);
     }
 
     public void BeginCapture()
     {
         _overlay.Begin();
+    }
+
+    /// <summary>Сцена «снять область»: оверлей с растягиванием рамки.</summary>
+    public void BeginRegionCapture()
+    {
+        _regionOverlay.Begin();
+    }
+
+    private void OnRegionPicked(Interop.Native.RECT rect)
+    {
+        try
+        {
+            TakeRegionShot(rect);
+        }
+        catch (CaptureException ex)
+        {
+            _tray.Notify(L.AppName, ex.Message, true);
+        }
+        catch (Exception ex)
+        {
+            _tray.Notify(L.AppName, I18n.Format("notify.captureFailed", ex.Message), true);
+        }
+    }
+
+    /// <summary>
+    /// Снимок области: кадр экрана, как и снятое окно, оформляется фоном,
+    /// отступом, скруглением и тенью. Отличия два: заголовок не срезается —
+    /// у фрагмента экрана его нет, и подписи с названием приложения нет —
+    /// область не принадлежит ни одному окну.
+    /// </summary>
+    private void TakeRegionShot(Interop.Native.RECT rect)
+    {
+        var raw = ScreenCapturer.CaptureRegion(rect);
+
+        // Масштаб монитора, где лежит выделение: без него отступ и тень на
+        // экране 150–200% выходили бы заметно меньшими, чем у снимка окна
+        var scale = Interop.Native.GetScaleAtRect(rect);
+
+        var prepared = ShotRenderer.PrepareWindow(raw, _settings, scale, cutTitleBar: false);
+
+        var shot = ShotRenderer.Render(prepared, _settings, scale);
+
+        LastShot = shot;
+
+        bool copied = ClipboardService.TrySetImage(shot);
+
+        if (_settings.SaveToDisk)
+        {
+            ClipboardService.SaveToPictures(
+                shot, I18n.Current["region.name"], _settings.Format, _settings.JpegQuality);
+        }
+
+        if (!copied)
+            _tray.Notify(L.AppName, I18n.Current["status.clipboardBusy"], true);
     }
 
     private void OnPicked(WindowInfo window)

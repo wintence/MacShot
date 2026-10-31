@@ -13,6 +13,7 @@
 public static class L
 {
     public static string TrayCapture => I18n.Current["tray.capture"];
+    public static string TrayRegion => I18n.Current["tray.region"];
     public static string TraySettings => I18n.Current["tray.settings"];
     public static string TrayExit => I18n.Current["tray.exit"];
     public static string AppName => I18n.Current["tray.app"];
@@ -60,6 +61,8 @@ public static class L
     public static string AppNameHint => I18n.Current["set.appNameHint"];
     public static string TitleCard => I18n.Current["set.titleCard"];
     public static string HotKey => I18n.Current["set.hotkey"];
+    public static string HotKeyWindow => I18n.Current["set.hotkeyWindow"];
+    public static string HotKeyRegion => I18n.Current["set.hotkeyRegion"];
     public static string SetHotKey => I18n.Current["set.setHotkey"];
     public static string Storage => I18n.Current["set.storage"];
     public static string SaveCopy => I18n.Current["set.saveCopy"];

@@ -78,10 +78,13 @@ internal sealed class I18n
         {
             // Трей
             ["tray.capture"] = "Снять окно",
+            ["tray.region"] = "Снять область",
             ["tray.settings"] = "Настройки…",
             ["tray.exit"] = "Выход",
             ["tray.hotkey"] = "Горячая клавиша: {0}",
             ["tray.hotkeyNone"] = "Горячая клавиша не назначена",
+            ["tray.regionHotkey"] = "Горячая клавиша (область): {0}",
+            ["tray.regionHotkeyNone"] = "Горячая клавиша (область) не назначена",
             ["tray.app"] = "MacShot",
 
             // Уведомления
@@ -108,6 +111,10 @@ internal sealed class I18n
             ["cap.printFalse"] = "PrintWindow вернул false ({0})",
             ["cap.printTimeout"] = "PrintWindow не ответил за {0} мс",
             ["cap.zeroBounds"] = "у окна нулевые границы",
+            ["cap.screenFailed"] = "Не удалось снять выбранный фрагмент экрана: {0}",
+
+            // Снимок области
+            ["region.name"] = "Область",
 
             // Диалог горячей клавиши
             ["hk.title"] = "Задать горячую клавишу",
@@ -176,6 +183,8 @@ internal sealed class I18n
             ["set.addApp"] = "Добавить",
             ["set.perAppEmpty"] = "Список пуст. Добавьте приложение кнопкой выше — или снимите его окно при включённом срезке, и строка появится сама.",
             ["set.hotkey"] = "Горячая клавиша",
+            ["set.hotkeyWindow"] = "Снимок окна",
+            ["set.hotkeyRegion"] = "Выделение области",
             ["set.setHotkey"] = "Изменить…",
             ["set.storage"] = "Сохранение и запуск",
             ["set.saveCopy"] = "Сохранять копию в «Изображения»",
@@ -214,10 +223,13 @@ internal sealed class I18n
         var en = new Dictionary<string, string>
         {
             ["tray.capture"] = "Capture window",
+            ["tray.region"] = "Capture area",
             ["tray.settings"] = "Settings…",
             ["tray.exit"] = "Exit",
             ["tray.hotkey"] = "Hotkey: {0}",
             ["tray.hotkeyNone"] = "No hotkey assigned",
+            ["tray.regionHotkey"] = "Hotkey (area): {0}",
+            ["tray.regionHotkeyNone"] = "No hotkey assigned for area",
             ["tray.app"] = "MacShot",
 
             ["notify.cancelled"] = "Selection cancelled.",
@@ -241,6 +253,9 @@ internal sealed class I18n
             ["cap.printFalse"] = "PrintWindow returned false ({0})",
             ["cap.printTimeout"] = "PrintWindow did not respond within {0} ms",
             ["cap.zeroBounds"] = "the window has zero bounds",
+            ["cap.screenFailed"] = "Could not capture the selected screen area: {0}",
+
+            ["region.name"] = "Region",
 
             ["hk.title"] = "Set hotkey",
             ["hk.prompt"] = "Press a key combination",
@@ -305,6 +320,8 @@ internal sealed class I18n
             ["set.addApp"] = "Add",
             ["set.perAppEmpty"] = "The list is empty. Add an app with the button above, or take a screenshot of it with the cut turned on and the row will appear by itself.",
             ["set.hotkey"] = "Hotkey",
+            ["set.hotkeyWindow"] = "Window shot",
+            ["set.hotkeyRegion"] = "Area selection",
             ["set.setHotkey"] = "Change…",
             ["set.storage"] = "Storage and startup",
             ["set.saveCopy"] = "Save a copy to Pictures",

@@ -340,15 +340,20 @@ internal static class ShotRenderer
     /// Окно, снятое в кадр. Нужно в автоматическом режиме: высоту заголовка
     /// мы берём из геометрии именно этого окна.
     /// </param>
+    /// <param name="cutTitleBar">
+    /// Срезать ли заголовок. Для снимка выделенной области экрана заголовка
+    /// нет и резать нечего, а вот скругление нужно — поэтому передают false.
+    /// </param>
     public static BitmapSource PrepareWindow(
-        BitmapSource source, AppSettings settings, double scale, IntPtr hwnd = default)
+        BitmapSource source, AppSettings settings, double scale, IntPtr hwnd = default,
+        bool cutTitleBar = true)
     {
         // Радиус задан в DIP, а пиксели — в физических, поэтому пересчитываем
         var working = source.IsFrozen
             ? new WriteableBitmap(source)
             : (WriteableBitmap)source;
 
-        int crop = settings.HideTitleBar
+        int crop = settings.HideTitleBar && cutTitleBar
             ? (int)Math.Round(TitleBarDip(settings, scale, hwnd) * scale)
             : 0;
 
