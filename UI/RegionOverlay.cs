@@ -119,10 +119,11 @@ internal sealed class RegionOverlay : Window
     protected override void OnSourceInitialized(EventArgs e)
     {
         base.OnSourceInitialized(e);
-        // Как и у PickerOverlay: без WS_EX_TRANSPARENT WindowFromPoint и
-        // клики уходили бы в сам оверлей
+        // Как и у PickerOverlay, WS_EX_TRANSPARENT здесь нельзя: с ним
+        // протяжка рамки уходила бы в окно под оверлеем и выделяла там
+        // текст или элементы. Оверлей должен забирать ввод себе.
         var hwnd = new WindowInteropHelper(this).Handle;
-        Native.AddExStyle(hwnd, Native.WS_EX_TOOLWINDOW | Native.WS_EX_TRANSPARENT);
+        Native.AddExStyle(hwnd, Native.WS_EX_TOOLWINDOW);
     }
 
     /// <summary>Показывает оверлей на весь виртуальный экран.</summary>

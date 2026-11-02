@@ -29,6 +29,7 @@ internal sealed class PickerOverlay : Window
     private WindowInfo? _current;
     private bool _active;
     private bool _leftWasDown;
+    private IntPtr _hwnd;
 
     public event Action<WindowInfo>? Picked;
     public event Action? Cancelled;
@@ -93,14 +94,20 @@ internal sealed class PickerOverlay : Window
     protected override void OnSourceInitialized(EventArgs e)
     {
         base.OnSourceInitialized(e);
-        var hwnd = new WindowInteropHelper(this).Handle;
+        _hwnd = new WindowInteropHelper(this).Handle;
 
-        // WS_EX_TRANSPARENT обязателен: без него WindowFromPoint возвращает сам
-        // оверлей, и окно под курсором перестаёт находиться.
+        // WS_EX_TRANSPARENT здесь ставить нельзя: с ним клики и протяжки
+        // проваливаются в окно под оверлеем. На сайте это выделяет текст,
+        // в списках — элементы, в редакторах — фрагменты. Оверлей обязан
+        // забирать ввод себе: тогда под ним ничего не происходит.
+        //
+        // Из-за этого WindowFromPoint возвращает сам оверлей, поэтому окно
+        // под курсором ищется по Z-порядку начиная со следующего окна
+        // (см. WindowFinder.FindAt).
         //
         // WS_EX_NOACTIVATE ставить нельзя — вместе с AllowsTransparency он
         // полностью отключает ввод мыши.
-        Native.AddExStyle(hwnd, Native.WS_EX_TOOLWINDOW | Native.WS_EX_TRANSPARENT);
+        Native.AddExStyle(_hwnd, Native.WS_EX_TOOLWINDOW);
     }
 
     /// <summary>Показывает оверлей на весь виртуальный экран.</summary>
@@ -191,7 +198,7 @@ internal sealed class PickerOverlay : Window
         if (!Native.GetCursorPos(out var cursor))
             return;
 
-        var window = WindowFinder.FindAt(cursor.X, cursor.Y);
+        var window = WindowFinder.FindAt(cursor.X, cursor.Y, _hwnd);
         if (window is null)
         {
             _current = null;

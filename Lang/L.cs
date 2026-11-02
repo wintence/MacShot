@@ -19,7 +19,7 @@ public static class L
     public static string AppName => I18n.Current["tray.app"];
 
     /// <summary>Версия программы. Показывается в заголовке окна настроек.</summary>
-    public const string Version = "1.5.0";
+    public const string Version = "1.5.1";
 
     /// <summary>Заголовок слева сверху: имя и версия в одном месте.</summary>
     public static string AppTitle => AppName + " " + Version;

@@ -89,6 +89,12 @@ internal static class Native
 
     public const uint GA_ROOT = 2;
 
+    /// <summary>Соседнее окно ниже по Z-порядку (следующее за указанным).</summary>
+    [DllImport("user32.dll")]
+    public static extern IntPtr GetWindow(IntPtr hwnd, uint command);
+
+    public const uint GW_HWNDNEXT = 2;
+
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool GetCursorPos(out POINT point);
@@ -300,7 +306,6 @@ internal static class Native
 
     public const int GWL_EXSTYLE = -20;
     public const int WS_EX_TOOLWINDOW = 0x00000080;
-    public const int WS_EX_TRANSPARENT = 0x00000020;
     public const int WS_EX_NOACTIVATE = 0x08000000;
     public const int WS_EX_LAYERED = 0x00080000;
 

@@ -40,10 +40,11 @@ where it is started from.
    `MacShot-full.exe` — the name is the only thing telling them apart, and
    two identical `MacShot.exe` files in two folders is a trap.
 
-5. Copy the **lite** build to `E:\Soft\MacShot\MacShot-lite.exe`. This is
-   the installed copy, the one launched from there, and it must match the
-   release. Do not skip it: the user runs from that path, and a release
-   published without it leaves the machine on the previous version.
+5. Copy the **lite** build over the installed copy at
+   `E:\Soft\MacShot\MacShot.exe` — the shortcut in that folder points to it.
+   It must match the release. Do not skip it: the user runs from that path,
+   and a release published without it leaves the machine on the previous
+   version.
 
 6. Commit, push, then create the release:
 

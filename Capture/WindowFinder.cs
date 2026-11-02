@@ -44,19 +44,39 @@ internal static class WindowFinder
     /// <summary>
     /// Returns the top-level window under a screen point, or null
     /// if nothing suitable is under the cursor.
+    ///
+    /// <paramref name="overlayHwnd"/> — окно оверлея выбора, которое нужно
+    /// пропустить. Оверлей больше не прозрачен для ввода (иначе клики и
+    /// протяжки уходили бы в окно под ним и выделяли текст), поэтому
+    /// WindowFromPoint возвращает сам оверлей. Идём от него вниз по
+    /// Z-порядку и берём первое подходящее окно, в чьи границы попадает точка.
     /// </summary>
-    public static WindowInfo? FindAt(int screenX, int screenY)
+    public static WindowInfo? FindAt(int screenX, int screenY, IntPtr overlayHwnd = default)
     {
-        var child = Native.WindowFromPoint(new Native.POINT { X = screenX, Y = screenY });
-        if (child == IntPtr.Zero)
-            return null;
+        var point = new Native.POINT { X = screenX, Y = screenY };
 
-        var root = Native.GetAncestor(child, Native.GA_ROOT);
-        if (root == IntPtr.Zero)
-            root = child;
+        var hwnd = overlayHwnd != IntPtr.Zero
+            ? Native.GetWindow(overlayHwnd, Native.GW_HWNDNEXT)
+            : Native.WindowFromPoint(point);
 
-        return Inspect(root);
+        while (hwnd != IntPtr.Zero)
+        {
+            var root = Native.GetAncestor(hwnd, Native.GA_ROOT);
+            if (root == IntPtr.Zero)
+                root = hwnd;
+
+            if (Inspect(root) is { } window && Contains(window.Bounds, point))
+                return window;
+
+            hwnd = Native.GetWindow(root, Native.GW_HWNDNEXT);
+        }
+
+        return null;
     }
+
+    private static bool Contains(Native.RECT rect, Native.POINT point) =>
+        point.X >= rect.Left && point.X < rect.Right &&
+        point.Y >= rect.Top && point.Y < rect.Bottom;
 
     /// <summary>
     /// Returns the window if it is fit for capture, otherwise null.

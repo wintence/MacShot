@@ -55,10 +55,20 @@ second time on, the overlay appeared but ignored both clicks and `Esc`.
 
 ## Overlay
 
-The picker window is transparent (`WS_EX_TRANSPARENT`) and polls the mouse via
-`GetCursorPos` / `GetAsyncKeyState` instead of relying on WPF events. At alpha 0
-WPF receives no mouse input at all: the event is needed to draw the highlight,
-and the highlight is needed for the event to arrive.
+The picker window polls the mouse via `GetCursorPos` / `GetAsyncKeyState`
+instead of relying on WPF events. The canvas carries an almost invisible
+background (alpha 1): at alpha 0 Windows treats the layered window as
+click-through, and the overlay would never receive input itself.
+
+`WS_EX_TRANSPARENT` is deliberately **not** set. It was there before and made
+the overlay transparent to the mouse, so every click and drag went to the
+window underneath: on a website the text got selected, in a list an item, in
+an editor a fragment. The overlay has to swallow input, not pass it on.
+
+The price is that `WindowFromPoint` now returns the overlay itself. The window
+under the cursor is found by walking down the Z-order from the overlay
+(`GetWindow(hwnd, GW_HWNDNEXT)`) and taking the first suitable window whose
+bounds contain the point — see `WindowFinder.FindAt`.
 
 ## Rendering
 
