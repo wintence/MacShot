@@ -211,8 +211,52 @@ internal static class Native
         }
     }
 
+    // ---- Мониторы ----
+
+    /// <summary>Прямоугольник монитора в физических координатах экрана.</summary>
+    public delegate bool MonitorEnumProc(IntPtr hmonitor, IntPtr hdc, ref RECT rect, IntPtr data);
+
+    [DllImport("user32.dll")]
+    public static extern bool EnumDisplayMonitors(IntPtr hdc, IntPtr clip, MonitorEnumProc callback, IntPtr data);
+
     [DllImport("user32.dll")]
     private static extern int GetSystemMetrics(int index);
+
+    /// <summary>
+    /// Прямоугольник всего виртуального экрана (откат для MonitorUnion):
+    /// левый монитор может иметь отрицательные координаты, поэтому Right и
+    /// Bottom считаются как Left + ширина.
+    /// </summary>
+    public static RECT VirtualScreenRect()
+    {
+        const int SM_XVIRTUALSCREEN = 76;
+        const int SM_YVIRTUALSCREEN = 77;
+        const int SM_CXVIRTUALSCREEN = 78;
+        const int SM_CYVIRTUALSCREEN = 79;
+
+        try
+        {
+            int left = GetSystemMetrics(SM_XVIRTUALSCREEN);
+            int top = GetSystemMetrics(SM_YVIRTUALSCREEN);
+            int width = GetSystemMetrics(SM_CXVIRTUALSCREEN);
+            int height = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+
+            if (width <= 0 || height <= 0)
+                return default;
+
+            return new RECT
+            {
+                Left = left,
+                Top = top,
+                Right = left + width,
+                Bottom = top + height,
+            };
+        }
+        catch
+        {
+            return default;
+        }
+    }
 
     /// <summary>
     /// Высота системного заголовка этой системы, DIP.

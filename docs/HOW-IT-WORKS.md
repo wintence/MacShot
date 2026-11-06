@@ -9,6 +9,7 @@ App.xaml.cs                 argument parsing, startup, single-instance guard
 Interop/Native.cs           P/Invoke
 Interop/DibSurface.cs       GDI DIB surface
 Capture/WindowFinder.cs     window under the cursor and its bounds
+Capture/ScreenCapturer.cs   frozen frame of the whole screen, crops of it
 Capture/WindowCapturer.cs   PrintWindow with a timeout, BitBlt as fallback
 Capture/PixelTransfer.cs    pixel transfer between GDI and WPF
 Render/CornerRounder.cs     corner rounding
@@ -20,7 +21,39 @@ Themes/                     light and dark palettes
 Settings/                   settings model and color parsing
 ```
 
-## Capture
+## Frozen screen
+
+Both capture modes freeze the screen. When the hotkey fires, the entire
+virtual screen (all monitors, physical pixels, `BitBlt` from the screen DC)
+is captured once by `ScreenCapturer.CaptureVirtualScreen`. The overlay then
+shows this frame instead of the live screen, so animations, video and moving
+windows **stand still** while the user picks a window or stretches a region
+— the selection happens on a static picture, which is the point of the
+feature. The `Dim` rectangles sit above the frame, so the dimming looks the
+same as before.
+
+The final shot is cropped out of that frame by `ScreenCapturer.CropRegion`
+(`CroppedBitmap` + a `WriteableBitmap` copy for the rounder), not re-captured
+from the live screen. Otherwise the content could move between the pick and
+the capture and would not match what the user selected. Because the shot
+comes from the frame, the "has the window closed / minimized" checks before
+a window shot were removed: they would cancel a shot that still exists in
+the frame. If the window is really gone, only the app-name caption and the
+automatic title-bar cut lose their data — `Native` has safe fallbacks for
+both.
+
+Monitor union comes from `EnumDisplayMonitors` (`MONITORINFO.rcMonitor`),
+which reports **physical** coordinates regardless of process DPI awareness —
+unlike `GetSystemMetrics`, which virtualizes under PerMonitorV2. Selection
+rects may stick out past the union (`CroppedBitmap` throws on that), so
+`CropRegion` clamps first.
+
+On mixed-DPI setups the frame is laid out in the overlay via
+`PointFromScreen` on its corners, the same way the selection rect is drawn.
+
+## Window capture (legacy path)
+
+The self-test (`--self-test`) still captures a window through `WindowCapturer`.
 
 `PrintWindow` with `PW_RENDERFULLCONTENT` comes first — it draws the window into
 the supplied buffer and does not care whether the window is covered.

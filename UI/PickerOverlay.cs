@@ -22,6 +22,7 @@ namespace MacShot.UI;
 internal sealed class PickerOverlay : Window
 {
     private readonly Canvas _canvas;
+    private readonly Image _frozenImage;
     private readonly Rectangle _dimTop, _dimBottom, _dimLeft, _dimRight;
     private readonly Border _highlight;
     private readonly DispatcherTimer _timer;
@@ -30,8 +31,9 @@ internal sealed class PickerOverlay : Window
     private bool _active;
     private bool _leftWasDown;
     private IntPtr _hwnd;
+    private FrozenScreen? _frozen;
 
-    public event Action<WindowInfo>? Picked;
+    public event Action<WindowInfo, FrozenScreen>? Picked;
     public event Action? Cancelled;
 
     public PickerOverlay()
@@ -64,6 +66,16 @@ internal sealed class PickerOverlay : Window
             IsHitTestVisible = false,
         };
 
+        // Замороженный кадр экрана: нижний слой оверлея. Пока пользователь
+        // выбирает окно, живой экран продолжает двигаться, но виден только
+        // этот статичный снимок — экран «остановлен».
+        _frozenImage = new Image
+        {
+            Stretch = Stretch.Fill,
+            IsHitTestVisible = false,
+            Visibility = Visibility.Hidden,
+        };
+
         _canvas = new Canvas
         {
             ClipToBounds = true,
@@ -72,6 +84,7 @@ internal sealed class PickerOverlay : Window
             Background = new SolidColorBrush(Color.FromArgb(1, 0, 0, 0)),
         };
 
+        _canvas.Children.Add(_frozenImage);
         _canvas.Children.Add(_dimTop);
         _canvas.Children.Add(_dimBottom);
         _canvas.Children.Add(_dimLeft);
@@ -110,9 +123,15 @@ internal sealed class PickerOverlay : Window
         Native.AddExStyle(_hwnd, Native.WS_EX_TOOLWINDOW);
     }
 
-    /// <summary>Показывает оверлей на весь виртуальный экран.</summary>
-    public void Begin()
+    /// <summary>
+    /// Показывает оверлей на весь виртуальный экран. Кадр задаётся заранее:
+    /// снимается до показа оверлея, чтобы в него не попало затемнение.
+    /// </summary>
+    public void Begin(FrozenScreen frozen)
     {
+        _frozen = frozen;
+        _frozenImage.Source = frozen.Bitmap;
+
         Left = SystemParameters.VirtualScreenLeft;
         Top = SystemParameters.VirtualScreenTop;
         Width = SystemParameters.VirtualScreenWidth;
@@ -136,6 +155,7 @@ internal sealed class PickerOverlay : Window
             if (_active)
                 return;
 
+            PlaceFrozenImage();
             _active = true;
             _timer.Start();
             UpdateHighlight();
@@ -150,9 +170,34 @@ internal sealed class PickerOverlay : Window
         if (_active)
             return;
 
+        PlaceFrozenImage();
         _active = true;
         _timer.Start();
         UpdateHighlight();
+    }
+
+    /// <summary>
+    /// Кладёт замороженный кадр под затемнение. Физические пиксели кадра
+    /// переводятся в DIP канвы через PointFromScreen — картинка ложится
+    /// точно при любом масштабе монитора.
+    /// </summary>
+    private void PlaceFrozenImage()
+    {
+        if (_frozen is not { } frozen)
+            return;
+
+        if (_frozenImage.Source is null)
+            _frozenImage.Source = frozen.Bitmap;
+
+        var topLeft = PointFromScreen(new Point(frozen.Frame.Left, frozen.Frame.Top));
+        var bottomRight = PointFromScreen(new Point(frozen.Frame.Right, frozen.Frame.Bottom));
+
+        // Повторный Begin пересчитывает размеры заново: окно переиспользуется
+        _frozenImage.Width = Math.Max(1, bottomRight.X - topLeft.X);
+        _frozenImage.Height = Math.Max(1, bottomRight.Y - topLeft.Y);
+        Canvas.SetLeft(_frozenImage, topLeft.X);
+        Canvas.SetTop(_frozenImage, topLeft.Y);
+        _frozenImage.Visibility = Visibility.Visible;
     }
 
     private void Poll()
@@ -175,10 +220,10 @@ internal sealed class PickerOverlay : Window
         {
             _leftWasDown = true;
 
-            if (_current is { } target)
+            if (_current is { } target && _frozen is { } frozen)
             {
                 Finish();
-                Picked?.Invoke(target);
+                Picked?.Invoke(target, frozen);
             }
             else
             {
@@ -212,19 +257,22 @@ internal sealed class PickerOverlay : Window
 
         _current = window;
 
-        var origin = PointToScreen(new Point(0, 0));
+        // Физические пиксели окна -> DIP канвы: PointFromScreen учитывает
+        // масштаб монитора, поэтому подсветка ложится точно под окно и на
+        // 100%, и на 150–200%. Так подсветка совпадает и с замороженным кадром.
         var bounds = window.Value.Bounds;
+        var from = PointFromScreen(new Point(bounds.Left, bounds.Top));
+        var to = PointFromScreen(new Point(bounds.Right, bounds.Bottom));
 
-        double left = bounds.Left - origin.X;
-        double top = bounds.Top - origin.Y;
+        var dip = new Rect(from, to);
 
-        _highlight.Width = bounds.Width;
-        _highlight.Height = bounds.Height;
-        Canvas.SetLeft(_highlight, left);
-        Canvas.SetTop(_highlight, top);
+        _highlight.Width = dip.Width;
+        _highlight.Height = dip.Height;
+        Canvas.SetLeft(_highlight, dip.Left);
+        Canvas.SetTop(_highlight, dip.Top);
         _highlight.Visibility = Visibility.Visible;
 
-        SetDim(new Rect(left, top, bounds.Width, bounds.Height));
+        SetDim(dip);
     }
 
     /// <summary>
@@ -268,6 +316,13 @@ internal sealed class PickerOverlay : Window
     {
         _active = false;
         _timer.Stop();
+
+        // Кадр больше не нужен: замороженный снимок экрана занимает
+        // десятки мегабайт — держим его только пока оверлей открыт
+        _frozenImage.Source = null;
+        _frozenImage.Visibility = Visibility.Hidden;
+        _frozen = null;
+
         Hide();
     }
 

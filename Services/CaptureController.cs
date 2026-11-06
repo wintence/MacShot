@@ -67,20 +67,56 @@ internal sealed class CaptureController : IDisposable
 
     public void BeginCapture()
     {
-        _overlay.Begin();
+        if (!CaptureFrozen(out var frozen))
+            return;
+
+        _overlay.Begin(frozen);
     }
 
     /// <summary>Сцена «снять область»: оверлей с растягиванием рамки.</summary>
     public void BeginRegionCapture()
     {
-        _regionOverlay.Begin();
+        if (!CaptureFrozen(out var frozen))
+            return;
+
+        _regionOverlay.Begin(frozen);
     }
 
-    private void OnRegionPicked(Interop.Native.RECT rect)
+    /// <summary>
+    /// Заморозка экрана: снимок всего виртуального экрана до показа оверлея.
+    ///
+    /// Кадр снимается один раз при нажатии горячей клавиши и дальше служит
+    /// двум целям сразу: оверлей показывает его вместо живого экрана (поэтому
+    /// всё визуально остановлено), и из него же вырезается итоговый снимок.
+    /// Захват здесь — самый дорогой шаг сценария, но оверлей без кадра
+    /// показывать нельзя: пользователю пришлось бы выбирать по живому экрану.
+    /// </summary>
+    private bool CaptureFrozen(out FrozenScreen frozen)
     {
         try
         {
-            TakeRegionShot(rect);
+            frozen = ScreenCapturer.CaptureVirtualScreen();
+            return true;
+        }
+        catch (CaptureException ex)
+        {
+            frozen = default;
+            _tray.Notify(L.AppName, ex.Message, true);
+            return false;
+        }
+        catch (Exception ex)
+        {
+            frozen = default;
+            _tray.Notify(L.AppName, I18n.Format("notify.captureFailed", ex.Message), true);
+            return false;
+        }
+    }
+
+    private void OnRegionPicked(Native.RECT rect, FrozenScreen frozen)
+    {
+        try
+        {
+            TakeRegionShot(rect, frozen);
         }
         catch (CaptureException ex)
         {
@@ -93,14 +129,15 @@ internal sealed class CaptureController : IDisposable
     }
 
     /// <summary>
-    /// Снимок области: кадр экрана, как и снятое окно, оформляется фоном,
-    /// отступом, скруглением и тенью. Отличия два: заголовок не срезается —
-    /// у фрагмента экрана его нет, и подписи с названием приложения нет —
-    /// область не принадлежит ни одному окну.
+    /// Снимок области: кадр вырезается из замороженного снимка экрана, как и
+    /// снятое окно, оформляется фоном, отступом, скруглением и тенью.
+    /// Отличия два: заголовок не срезается — у фрагмента экрана его нет,
+    /// и подписи с названием приложения нет — область не принадлежит ни
+    /// одному окну.
     /// </summary>
-    private void TakeRegionShot(Interop.Native.RECT rect)
+    private void TakeRegionShot(Native.RECT rect, FrozenScreen frozen)
     {
-        var raw = ScreenCapturer.CaptureRegion(rect);
+        var raw = ScreenCapturer.CropRegion(frozen, rect);
 
         // Масштаб монитора, где лежит выделение: без него отступ и тень на
         // экране 150–200% выходили бы заметно меньшими, чем у снимка окна
@@ -124,11 +161,11 @@ internal sealed class CaptureController : IDisposable
             _tray.Notify(L.AppName, I18n.Current["status.clipboardBusy"], true);
     }
 
-    private void OnPicked(WindowInfo window)
+    private void OnPicked(WindowInfo window, FrozenScreen frozen)
     {
         try
         {
-            TakeShot(window);
+            TakeShot(window, frozen);
         }
         catch (CaptureException ex)
         {
@@ -140,29 +177,23 @@ internal sealed class CaptureController : IDisposable
         }
     }
 
-    private void TakeShot(WindowInfo window)
+    private void TakeShot(WindowInfo window, FrozenScreen frozen)
     {
-        // Окно могло закрыться или свернуться, пока пользователь выбирал
-        if (WindowFinder.HasClosed(window.Handle))
-        {
-            _tray.Notify(L.AppName, I18n.Current["notify.closed"], true);
-            return;
-        }
-
-        if (Native.IsIconic(window.Handle))
-        {
-            _tray.Notify(L.AppName, I18n.Current["notify.minimized"], true);
-            return;
-        }
-
-        var capture = WindowCapturer.Capture(window.Handle);
+        // Снимок вырезается из замороженного кадра — ровно то, что видел
+        // пользователь в момент выбора. Живой экран мог успеть измениться,
+        // и живой захват выдал бы уже «другое» окно. Поэтому проверки
+        // «не закрылось ли / не свернулось ли» отсюда убраны: их отмены
+        // ломали бы снимок, который по кадру всё ещё есть. Если окно
+        // действительно исчезло, не хватит данных лишь для подписи и
+        // среза заголовка — на этот случай у Native есть безопасные откаты.
+        var raw = ScreenCapturer.CropRegion(frozen, window.Bounds);
 
         // Масштаб берём у самого окна: при переносе между экранами с разным
         // DPI координаты и размеры иначе будут неверными.
         var scale = Native.GetScale(window.Handle);
 
         var prepared = ShotRenderer.PrepareWindow(
-            (WriteableBitmap)capture.Bitmap, _settings, scale, window.Handle);
+            raw, _settings, scale, window.Handle);
 
         // Имя приложения ищется до рендера: подпись над окном — часть кадра,
         // и без имени её просто не будет.
@@ -184,7 +215,7 @@ internal sealed class CaptureController : IDisposable
                 shot, window.Title, _settings.Format, _settings.JpegQuality);
         }
 
-        BuildStatus(window.Title, capture.Method, copied, savedPath);
+        BuildStatus(window.Title, copied, savedPath);
     }
 
     /// <summary>
@@ -246,7 +277,7 @@ internal sealed class CaptureController : IDisposable
         }
     }
 
-    private string BuildStatus(string title, CaptureMethod method, bool copied, string savedPath)
+    private string BuildStatus(string title, bool copied, string savedPath)
     {
         var parts = new System.Collections.Generic.List<string> { title };
 
@@ -254,11 +285,6 @@ internal sealed class CaptureController : IDisposable
 
         if (savedPath.Length > 0)
             parts.Add(I18n.Current["status.saved"]);
-
-        // Метод захвата полезно знать: если окно перекрыто другим и у него
-        // сработал резервный путь, пользователь увидит это по качеству снимка.
-        if (method == CaptureMethod.ScreenCopy)
-            parts.Add(I18n.Current["status.screenCopy"]);
 
         return string.Join(" — ", parts);
     }

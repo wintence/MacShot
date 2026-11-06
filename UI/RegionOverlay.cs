@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows.Threading;
+using MacShot.Capture;
 using MacShot.Interop;
 
 namespace MacShot.UI;
@@ -28,6 +29,7 @@ internal sealed class RegionOverlay : Window
     private const int MinSidePx = 16;
 
     private readonly Canvas _canvas;
+    private readonly Image _frozenImage;
     private readonly Rectangle _dimTop, _dimBottom, _dimLeft, _dimRight;
     private readonly Border _selection;
     private readonly TextBlock _size;
@@ -37,9 +39,10 @@ internal sealed class RegionOverlay : Window
     private bool _dragging;
     private bool _leftWasDown;
     private Native.POINT _anchor;
+    private FrozenScreen? _frozen;
 
     /// <summary>Выделенный прямоугольник в физических пикселях экрана.</summary>
-    public event Action<Native.RECT>? Picked;
+    public event Action<Native.RECT, FrozenScreen>? Picked;
     public event Action? Cancelled;
 
     public RegionOverlay()
@@ -88,6 +91,16 @@ internal sealed class RegionOverlay : Window
             IsHitTestVisible = false,
         };
 
+        // Замороженный кадр экрана: нижний слой оверлея. Всё, что под ним,
+        // «остановлено» на момент нажатия горячей клавиши — выбор идёт по
+        // статичной картинке, а не по живому экрану.
+        _frozenImage = new Image
+        {
+            Stretch = Stretch.Fill,
+            IsHitTestVisible = false,
+            Visibility = Visibility.Hidden,
+        };
+
         _canvas = new Canvas
         {
             ClipToBounds = true,
@@ -96,6 +109,7 @@ internal sealed class RegionOverlay : Window
             Background = new SolidColorBrush(Color.FromArgb(1, 0, 0, 0)),
         };
 
+        _canvas.Children.Add(_frozenImage);
         _canvas.Children.Add(_dimTop);
         _canvas.Children.Add(_dimBottom);
         _canvas.Children.Add(_dimLeft);
@@ -126,9 +140,15 @@ internal sealed class RegionOverlay : Window
         Native.AddExStyle(hwnd, Native.WS_EX_TOOLWINDOW);
     }
 
-    /// <summary>Показывает оверлей на весь виртуальный экран.</summary>
-    public void Begin()
+    /// <summary>
+    /// Показывает оверлей на весь виртуальный экран. Поверх экрана выводится
+    /// замороженный кадр: после первого же кадра реальный экран под оверлеем
+    /// больше не виден.
+    /// </summary>
+    public void Begin(FrozenScreen frozen)
     {
+        _frozen = frozen;
+
         Left = SystemParameters.VirtualScreenLeft;
         Top = SystemParameters.VirtualScreenTop;
         Width = SystemParameters.VirtualScreenWidth;
@@ -155,6 +175,7 @@ internal sealed class RegionOverlay : Window
             if (_active)
                 return;
 
+            PlaceFrozenImage();
             _active = true;
             _timer.Start();
         }));
@@ -168,8 +189,33 @@ internal sealed class RegionOverlay : Window
         if (_active)
             return;
 
+        PlaceFrozenImage();
         _active = true;
         _timer.Start();
+    }
+
+    /// <summary>
+    /// Кладёт замороженный кадр под затемнение. Физические пиксели кадра
+    /// переводятся в DIP канвы через PointFromScreen, поэтому картинка ложится
+    /// точно под курсором при любом масштабе монитора.
+    /// </summary>
+    private void PlaceFrozenImage()
+    {
+        if (_frozen is not { } frozen)
+            return;
+
+        if (_frozenImage.Source is null)
+            _frozenImage.Source = frozen.Bitmap;
+
+        var topLeft = PointFromScreen(new Point(frozen.Frame.Left, frozen.Frame.Top));
+        var bottomRight = PointFromScreen(new Point(frozen.Frame.Right, frozen.Frame.Bottom));
+
+        // Повторный Begin пересчитывает размеры заново: окно переиспользуется
+        _frozenImage.Width = Math.Max(1, bottomRight.X - topLeft.X);
+        _frozenImage.Height = Math.Max(1, bottomRight.Y - topLeft.Y);
+        Canvas.SetLeft(_frozenImage, topLeft.X);
+        Canvas.SetTop(_frozenImage, topLeft.Y);
+        _frozenImage.Visibility = Visibility.Visible;
     }
 
     private void Poll()
@@ -214,11 +260,19 @@ internal sealed class RegionOverlay : Window
     {
         var rect = Normalize(_anchor, cursor);
 
-        // Оверлей прячем до захвата: иначе затемнение и рамка попали бы в снимок
+        // Оверлей прячем до передачи кадра: иначе затемнение и рамка попали бы
+        // в снимок — впрочем, снимок и так вырезается из замороженного кадра.
+        if (_frozen is not { } frozen)
+        {
+            Finish();
+            Cancelled?.Invoke();
+            return;
+        }
+
         Finish();
 
         if (rect.Width >= MinSidePx && rect.Height >= MinSidePx)
-            Picked?.Invoke(rect);
+            Picked?.Invoke(rect, frozen);
         else
             Cancelled?.Invoke();
     }
@@ -306,6 +360,13 @@ internal sealed class RegionOverlay : Window
         _active = false;
         _dragging = false;
         _timer.Stop();
+
+        // Кадр больше не нужен: освобождаем память (замороженный кадр
+        // виртуального экрана — десятки мегабайт)
+        _frozenImage.Source = null;
+        _frozenImage.Visibility = Visibility.Hidden;
+        _frozen = null;
+
         Hide();
     }
 
