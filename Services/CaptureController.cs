@@ -58,8 +58,22 @@ internal sealed class CaptureController : IDisposable
             AppLog.Write($"region hotkey {g}: " +
                          (regionOk ? "registered" : "FAILED - " + _hotKey.LastError));
 
+        // Для полного экрана пустое сочетание означает то же: режим доступен
+        // из меню трея, хоткей просто не занят.
+        string? screenGesture = string.IsNullOrWhiteSpace(_settings.ScreenHotKey)
+            ? null
+            : _settings.ScreenHotKey;
+
+        bool screenOk = screenGesture is null ||
+                        _hotKey.Register(HotKeyService.ScreenHotKeyId, screenGesture, BeginScreenCapture);
+
+        if (screenGesture is { } s)
+            AppLog.Write($"screen hotkey {s}: " +
+                         (screenOk ? "registered" : "FAILED - " + _hotKey.LastError));
+
         _tray.SetHotKey(windowOk ? _settings.HotKey : null);
         _tray.SetRegionHotKey(regionOk ? regionGesture : null);
+        _tray.SetScreenHotKey(screenOk ? screenGesture : null);
 
         if (!windowOk)
             _tray.Notify(L.AppName, _hotKey.LastError ?? I18n.Current["notify.hotkeyFailed"], true);
@@ -80,6 +94,29 @@ internal sealed class CaptureController : IDisposable
             return;
 
         _regionOverlay.Begin(frozen);
+    }
+
+    /// <summary>
+    /// Сцена «снять весь экран»: снимок делается сразу, без оверлея и выбора.
+    /// Замороженный кадр уже целиком готов — его остаётся только оформить.
+    /// </summary>
+    public void BeginScreenCapture()
+    {
+        if (!CaptureFrozen(out var frozen))
+            return;
+
+        try
+        {
+            TakeScreenShot(frozen);
+        }
+        catch (CaptureException ex)
+        {
+            _tray.Notify(L.AppName, ex.Message, true);
+        }
+        catch (Exception ex)
+        {
+            _tray.Notify(L.AppName, I18n.Format("notify.captureFailed", ex.Message), true);
+        }
     }
 
     /// <summary>
@@ -175,6 +212,38 @@ internal sealed class CaptureController : IDisposable
         {
             _tray.Notify(L.AppName, I18n.Format("notify.captureFailed", ex.Message), true);
         }
+    }
+
+    /// <summary>
+    /// Снимок всего экрана: замороженный кадр берётся целиком, без выбора
+    /// и без рамки. Оформление то же, что у области: фон, отступ,
+    /// скругление и тень — но подписей нет, как и у фрагмента, экран не
+    /// принадлежит ни одному окну.
+    /// </summary>
+    private void TakeScreenShot(FrozenScreen frozen)
+    {
+        var raw = ScreenCapturer.CropRegion(frozen, frozen.Frame);
+
+        // Масштаб монитора у кадра: для одного монитора это ровно его
+        // масштаб, для объединения нескольких — ближайшего.
+        var scale = Interop.Native.GetScaleAtRect(frozen.Frame);
+
+        var prepared = ShotRenderer.PrepareWindow(raw, _settings, scale, cutTitleBar: false);
+
+        var shot = ShotRenderer.Render(prepared, _settings, scale);
+
+        LastShot = shot;
+
+        bool copied = ClipboardService.TrySetImage(shot);
+
+        if (_settings.SaveToDisk)
+        {
+            ClipboardService.SaveToPictures(
+                shot, I18n.Current["screen.name"], _settings.Format, _settings.JpegQuality);
+        }
+
+        if (!copied)
+            _tray.Notify(L.AppName, I18n.Current["status.clipboardBusy"], true);
     }
 
     private void TakeShot(WindowInfo window, FrozenScreen frozen)

@@ -79,12 +79,15 @@ internal sealed class I18n
             // Трей
             ["tray.capture"] = "Снять окно",
             ["tray.region"] = "Снять область",
+            ["tray.screen"] = "Снять весь экран",
             ["tray.settings"] = "Настройки…",
             ["tray.exit"] = "Выход",
             ["tray.hotkey"] = "Горячая клавиша: {0}",
             ["tray.hotkeyNone"] = "Горячая клавиша не назначена",
             ["tray.regionHotkey"] = "Горячая клавиша (область): {0}",
             ["tray.regionHotkeyNone"] = "Горячая клавиша (область) не назначена",
+            ["tray.screenHotkey"] = "Горячая клавиша (экран): {0}",
+            ["tray.screenHotkeyNone"] = "Горячая клавиша (экран) не назначена",
             ["tray.app"] = "MacShot",
 
             // Уведомления
@@ -115,6 +118,9 @@ internal sealed class I18n
 
             // Снимок области
             ["region.name"] = "Область",
+
+            // Снимок всего экрана
+            ["screen.name"] = "Экран",
 
             // Диалог горячей клавиши
             ["hk.title"] = "Задать горячую клавишу",
@@ -185,6 +191,7 @@ internal sealed class I18n
             ["set.hotkey"] = "Горячая клавиша",
             ["set.hotkeyWindow"] = "Снимок окна",
             ["set.hotkeyRegion"] = "Выделение области",
+            ["set.hotkeyScreen"] = "Весь экран",
             ["set.setHotkey"] = "Изменить…",
             ["set.storage"] = "Сохранение и запуск",
             ["set.saveCopy"] = "Сохранять копию в «Изображения»",
@@ -224,12 +231,15 @@ internal sealed class I18n
         {
             ["tray.capture"] = "Capture window",
             ["tray.region"] = "Capture area",
+            ["tray.screen"] = "Capture full screen",
             ["tray.settings"] = "Settings…",
             ["tray.exit"] = "Exit",
             ["tray.hotkey"] = "Hotkey: {0}",
             ["tray.hotkeyNone"] = "No hotkey assigned",
             ["tray.regionHotkey"] = "Hotkey (area): {0}",
             ["tray.regionHotkeyNone"] = "No hotkey assigned for area",
+            ["tray.screenHotkey"] = "Hotkey (screen): {0}",
+            ["tray.screenHotkeyNone"] = "No hotkey assigned for full screen",
             ["tray.app"] = "MacShot",
 
             ["notify.cancelled"] = "Selection cancelled.",
@@ -256,6 +266,8 @@ internal sealed class I18n
             ["cap.screenFailed"] = "Could not capture the selected screen area: {0}",
 
             ["region.name"] = "Region",
+
+            ["screen.name"] = "Screen",
 
             ["hk.title"] = "Set hotkey",
             ["hk.prompt"] = "Press a key combination",
@@ -322,6 +334,7 @@ internal sealed class I18n
             ["set.hotkey"] = "Hotkey",
             ["set.hotkeyWindow"] = "Window shot",
             ["set.hotkeyRegion"] = "Area selection",
+            ["set.hotkeyScreen"] = "Full screen",
             ["set.setHotkey"] = "Change…",
             ["set.storage"] = "Storage and startup",
             ["set.saveCopy"] = "Save a copy to Pictures",

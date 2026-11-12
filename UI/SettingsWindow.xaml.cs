@@ -312,6 +312,7 @@ public partial class SettingsWindow : Window
         ("set.hotkey", "General"),
         ("set.hotkeyWindow", "General"),
         ("set.hotkeyRegion", "General"),
+        ("set.hotkeyScreen", "General"),
         ("set.setHotkey", "General"),
         ("set.saveCopy", "General"),
         ("set.startup", "General"),
@@ -548,6 +549,7 @@ public partial class SettingsWindow : Window
 
         HotKeyLabel.Text = HotKeyService.Friendly(_settings.HotKey);
         RegionHotKeyLabel.Text = HotKeyService.Friendly(_settings.RegionHotKey);
+        ScreenHotKeyLabel.Text = HotKeyService.Friendly(_settings.ScreenHotKey);
 
         LangRu.IsChecked = _settings.Language == UiLanguage.Russian;
         LangEn.IsChecked = _settings.Language == UiLanguage.English;
@@ -2398,6 +2400,19 @@ public partial class SettingsWindow : Window
 
         _settings.RegionHotKey = dialog.PreparedGesture;
         RegionHotKeyLabel.Text = HotKeyService.Friendly(_settings.RegionHotKey);
+
+        Persist();
+    }
+
+    private void OnSetScreenHotKey(object sender, RoutedEventArgs e)
+    {
+        var dialog = new HotKeyDialog(_settings.ScreenHotKey) { Owner = this };
+
+        if (dialog.ShowDialog() != true)
+            return;
+
+        _settings.ScreenHotKey = dialog.PreparedGesture;
+        ScreenHotKeyLabel.Text = HotKeyService.Friendly(_settings.ScreenHotKey);
 
         Persist();
     }

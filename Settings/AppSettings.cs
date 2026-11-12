@@ -38,6 +38,12 @@ internal sealed class AppSettings
     public string RegionHotKey { get; set; } = "Ctrl+Shift+9";
 
     /// <summary>
+    /// Сочетание для снимка всего экрана. Пустая строка — хоткей отключён:
+    /// экран снимают и из меню трея.
+    /// </summary>
+    public string ScreenHotKey { get; set; } = "Ctrl+Shift+D0";
+
+    /// <summary>
 /// Interface language. English by default since the program is meant
 /// for a wide audience. The enum order is deliberately Russian-first so that
 /// settings.json files written earlier keep meaning Russian.
@@ -157,6 +163,7 @@ internal sealed class AppSettings
     {
         HotKey = HotKey,
         RegionHotKey = RegionHotKey,
+        ScreenHotKey = ScreenHotKey,
         Language = Language,
         Theme = Theme,
         Background = Background,
@@ -304,6 +311,12 @@ internal static class SettingsStore
             s.RegionHotKey = string.Empty;
         else if (!HotKeyService.IsValid(s.RegionHotKey))
             s.RegionHotKey = "Ctrl+Shift+9";
+
+        // Так же и для снимка всего экрана: пусто — хоткей отключён.
+        if (string.IsNullOrWhiteSpace(s.ScreenHotKey))
+            s.ScreenHotKey = string.Empty;
+        else if (!HotKeyService.IsValid(s.ScreenHotKey))
+            s.ScreenHotKey = "Ctrl+Shift+D0";
 
         // Старые settings.json без раздела со знаком, либо с явным null:
         // в обоих случаях настройки должны быть рабочими, а не пустыми.

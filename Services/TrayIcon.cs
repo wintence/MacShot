@@ -17,15 +17,19 @@ internal sealed class TrayIcon : IDisposable
     private readonly ContextMenuStrip _menu;
     private readonly ToolStripMenuItem _hotKeyItem;
     private readonly ToolStripMenuItem _regionHotKeyItem;
+    private readonly ToolStripMenuItem _screenHotKeyItem;
     private readonly ToolStripMenuItem _captureItem;
     private readonly ToolStripMenuItem _regionCaptureItem;
+    private readonly ToolStripMenuItem _screenCaptureItem;
     private readonly ToolStripMenuItem _settingsItem;
     private readonly ToolStripMenuItem _exitItem;
     private string? _activeGesture;
     private string? _activeRegionGesture;
+    private string? _activeScreenGesture;
 
     public event Action? CaptureRequested;
     public event Action? RegionCaptureRequested;
+    public event Action? ScreenCaptureRequested;
     public event Action? SettingsRequested;
     public event Action? ExitRequested;
 
@@ -39,17 +43,21 @@ internal sealed class TrayIcon : IDisposable
     {
         _hotKeyItem = new ToolStripMenuItem { Enabled = false };
         _regionHotKeyItem = new ToolStripMenuItem { Enabled = false };
+        _screenHotKeyItem = new ToolStripMenuItem { Enabled = false };
 
         _captureItem = new ToolStripMenuItem(L.TrayCapture, null, (_, _) => CaptureRequested?.Invoke());
         _regionCaptureItem = new ToolStripMenuItem(L.TrayRegion, null, (_, _) => RegionCaptureRequested?.Invoke());
+        _screenCaptureItem = new ToolStripMenuItem(L.TrayScreen, null, (_, _) => ScreenCaptureRequested?.Invoke());
         _settingsItem = new ToolStripMenuItem(L.TraySettings, null, (_, _) => SettingsRequested?.Invoke());
         _exitItem = new ToolStripMenuItem(L.TrayExit, null, (_, _) => ExitRequested?.Invoke());
 
         _menu = new ContextMenuStrip();
         _menu.Items.Add(_captureItem);
         _menu.Items.Add(_regionCaptureItem);
+        _menu.Items.Add(_screenCaptureItem);
         _menu.Items.Add(_hotKeyItem);
         _menu.Items.Add(_regionHotKeyItem);
+        _menu.Items.Add(_screenHotKeyItem);
         _menu.Items.Add(new ToolStripSeparator());
         _menu.Items.Add(_settingsItem);
         _menu.Items.Add(_exitItem);
@@ -70,11 +78,13 @@ internal sealed class TrayIcon : IDisposable
     {
         _captureItem.Text = L.TrayCapture;
         _regionCaptureItem.Text = L.TrayRegion;
+        _screenCaptureItem.Text = L.TrayScreen;
         _settingsItem.Text = L.TraySettings;
         _exitItem.Text = L.TrayExit;
         _icon.Text = L.AppName;
         SetHotKey(_activeGesture);
         SetRegionHotKey(_activeRegionGesture);
+        SetScreenHotKey(_activeScreenGesture);
     }
 
     public void SetHotKey(string? gesture)
@@ -94,6 +104,16 @@ internal sealed class TrayIcon : IDisposable
         _regionHotKeyItem.Text = string.IsNullOrWhiteSpace(gesture)
             ? I18n.Current["tray.regionHotkeyNone"]
             : I18n.Format("tray.regionHotkey", HotKeyService.Friendly(gesture));
+    }
+
+    /// <summary>Пустая строка — хоткей полного экрана отключён.</summary>
+    public void SetScreenHotKey(string? gesture)
+    {
+        _activeScreenGesture = gesture;
+
+        _screenHotKeyItem.Text = string.IsNullOrWhiteSpace(gesture)
+            ? I18n.Current["tray.screenHotkeyNone"]
+            : I18n.Format("tray.screenHotkey", HotKeyService.Friendly(gesture));
     }
 
     /// <summary>Всплывающее уведомление — для ошибок горячей клавиши.</summary>

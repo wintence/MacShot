@@ -691,7 +691,7 @@
                                     <TextBlock x:Name="HotKeyRegionLabel" Text="{x:Static local:L.HotKeyRegion}"
                                                Style="{StaticResource RowLabel}" Margin="14,2,14,6"/>
 
-                                    <Grid Margin="14,0,14,14">
+                                    <Grid Margin="14,0,14,12">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="Auto"/>
@@ -702,6 +702,23 @@
                                         </Border>
                                         <Button Grid.Column="1" Content="{x:Static local:L.SetHotKey}"
                                                 Click="OnSetRegionHotKey" Style="{StaticResource Button}"
+                                                Margin="8,0,0,0"/>
+                                    </Grid>
+
+                                    <TextBlock x:Name="HotKeyScreenLabel" Text="{x:Static local:L.HotKeyScreen}"
+                                               Style="{StaticResource RowLabel}" Margin="14,2,14,6"/>
+
+                                    <Grid Margin="14,0,14,14">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Grid.Column="0" Style="{StaticResource Field}" Padding="9,6">
+                                            <TextBlock x:Name="ScreenHotKeyLabel" Text="Ctrl+Shift+0"
+                                                       FontWeight="SemiBold"/>
+                                        </Border>
+                                        <Button Grid.Column="1" Content="{x:Static local:L.SetHotKey}"
+                                                Click="OnSetScreenHotKey" Style="{StaticResource Button}"
                                                 Margin="8,0,0,0"/>
                                     </Grid>
                                 </StackPanel>

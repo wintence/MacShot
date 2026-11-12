@@ -14,9 +14,10 @@ namespace MacShot.Services;
 /// </summary>
 internal sealed class HotKeyService : IDisposable
 {
-    /// <summary>'WN' — «снять окно», 'WO' — «снять область».</summary>
+    /// <summary>'WN' — «снять окно», 'WO' — «снять область», 'WS' — «весь экран».</summary>
     public const int WindowHotKeyId = 0x574E;
     public const int RegionHotKeyId = 0x574F;
+    public const int ScreenHotKeyId = 0x5750;
 
     private const int WmHotKey = 0x0312;
 
@@ -196,6 +197,7 @@ internal sealed class HotKeyService : IDisposable
         // держала бы хоткеи за уже уничтоженное окно
         Unregister(WindowHotKeyId);
         Unregister(RegionHotKeyId);
+        Unregister(ScreenHotKeyId);
         _source.RemoveHook(WndProc);
         _source.Dispose();
     }

@@ -100,6 +100,7 @@ public partial class App : Application
         _tray = new TrayIcon();
         _tray.CaptureRequested += BeginCapture;
         _tray.RegionCaptureRequested += BeginRegionCapture;
+        _tray.ScreenCaptureRequested += BeginScreenCapture;
         _tray.SettingsRequested += ShowSettings;
         _tray.ExitRequested += ExitApp;
 
@@ -198,6 +199,26 @@ public partial class App : Application
         {
             _tray?.Notify("MacShot", ex.Message, true);
         }
+    }
+
+    /// <summary>
+    /// Снимок всего экрана. Отложен на очередь диспетчера: пункт меню трея
+    /// закрывается после обработчика клика, и захвати в этот момент меню
+    /// оказалось бы в кадре целиком. Хоткейному пути задержка безвредна.
+    /// </summary>
+    private void BeginScreenCapture()
+    {
+        Dispatcher.BeginInvoke(DispatcherPriority.Background, () =>
+        {
+            try
+            {
+                _controller?.BeginScreenCapture();
+            }
+            catch (Exception ex)
+            {
+                _tray?.Notify("MacShot", ex.Message, true);
+            }
+        });
     }
 
     private void ShowSettings()
