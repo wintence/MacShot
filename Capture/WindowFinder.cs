@@ -24,6 +24,18 @@ internal static class WindowFinder
     private static uint _ownProcessId = (uint)Process.GetCurrentProcess().Id;
 
     /// <summary>
+    /// Служебные окна самого приложения: их в выборе быть не должно.
+    /// Пустых имён и безымянных собственных окон фильтр тоже не пускает.
+    /// </summary>
+    private static readonly HashSet<string> UtilityTitles = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "MacShotHotKey",   // скрытый приёмник WM_HOTKEY
+        "MacShotPicker",   // оверлей выбора окна
+        "MacShotRegion",   // оверлей выделения области
+        "MacShotToast",    // всплывающее уведомление
+    };
+
+    /// <summary>
     /// Возвращает все окна, которые имеет смысл предложить для захвата.
     /// </summary>
     public static List<WindowInfo> Enumerate()
@@ -94,14 +106,23 @@ internal static class WindowFinder
         if (Native.IsCloaked(hwnd))
             return null;
 
-        // Свои окна и трей предлагать нельзя
+        // Свои окна тоже можно снимать — например, окно настроек. Не
+        // предлагаются только служебные: скрытый приёмник хоткея и оверлеи.
+        // У всех них служебные имена, перечисленные точно (не префиксом,
+        // иначе под фильтр попало бы и окно настроек «MacShot — настройки»).
         Native.GetWindowThreadProcessId(hwnd, out uint pid);
-        if (pid == _ownProcessId)
-            return null;
 
         var title = GetTitle(hwnd);
-        if (string.IsNullOrWhiteSpace(title) || IgnoredTitles.Contains(title))
+
+        if (pid == _ownProcessId)
+        {
+            if (string.IsNullOrWhiteSpace(title) || UtilityTitles.Contains(title))
+                return null;
+        }
+        else if (string.IsNullOrWhiteSpace(title) || IgnoredTitles.Contains(title))
+        {
             return null;
+        }
 
         var bounds = GetCaptureBounds(hwnd);
         if (bounds.Width < 80 || bounds.Height < 40)

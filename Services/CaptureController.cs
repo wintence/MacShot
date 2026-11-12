@@ -20,6 +20,7 @@ internal sealed class CaptureController : IDisposable
 {
     private readonly PickerOverlay _overlay = new();
     private readonly RegionOverlay _regionOverlay = new();
+    private readonly ToastWindow _toast = new();
     private readonly HotKeyService _hotKey = new();
     private readonly AppSettings _settings;
     private readonly TrayIcon _tray;
@@ -188,14 +189,20 @@ internal sealed class CaptureController : IDisposable
 
         bool copied = ClipboardService.TrySetImage(shot);
 
+        string savedPath = string.Empty;
         if (_settings.SaveToDisk)
         {
-            ClipboardService.SaveToPictures(
+            savedPath = ClipboardService.SaveToPictures(
                 shot, I18n.Current["region.name"], _settings.Format, _settings.JpegQuality);
         }
 
         if (!copied)
+        {
             _tray.Notify(L.AppName, I18n.Current["status.clipboardBusy"], true);
+            return;
+        }
+
+        _toast.ShowMessage(BuildStatus(I18n.Current["region.name"], copied, savedPath));
     }
 
     private void OnPicked(WindowInfo window, FrozenScreen frozen)
@@ -236,14 +243,20 @@ internal sealed class CaptureController : IDisposable
 
         bool copied = ClipboardService.TrySetImage(shot);
 
+        string savedPath = string.Empty;
         if (_settings.SaveToDisk)
         {
-            ClipboardService.SaveToPictures(
+            savedPath = ClipboardService.SaveToPictures(
                 shot, I18n.Current["screen.name"], _settings.Format, _settings.JpegQuality);
         }
 
         if (!copied)
+        {
             _tray.Notify(L.AppName, I18n.Current["status.clipboardBusy"], true);
+            return;
+        }
+
+        _toast.ShowMessage(BuildStatus(I18n.Current["screen.name"], copied, savedPath));
     }
 
     private void TakeShot(WindowInfo window, FrozenScreen frozen)
@@ -284,7 +297,7 @@ internal sealed class CaptureController : IDisposable
                 shot, window.Title, _settings.Format, _settings.JpegQuality);
         }
 
-        BuildStatus(window.Title, copied, savedPath);
+        _toast.ShowMessage(BuildStatus(window.Title, copied, savedPath));
     }
 
     /// <summary>
