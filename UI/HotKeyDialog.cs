@@ -36,7 +36,7 @@ public sealed class HotKeyDialog : Window
         // один раз — и те, какая тема выбрана сейчас
         Background = Theme.Palette.Of("Bg");
         Foreground = Theme.Palette.Of("Text");
-        FontFamily = new FontFamily("Cascadia Mono, Consolas");
+        FontFamily = new FontFamily("Segoe UI Variable Text, Segoe UI");
 
         // Свой заголовок вместо системного: иначе у тёмного окна остаётся
         // светлая полоса, и она спорит с окном настроек.

@@ -12,7 +12,7 @@
         Foreground="{DynamicResource Text}"
         TextOptions.TextFormattingMode="Display"
         UseLayoutRounding="True"
-        FontFamily="Cascadia Mono, Consolas">
+        FontFamily="Segoe UI Variable Text, Segoe UI">
 
     <!-- Заголовок свой, а не системный. Системную строку заголовка
          перекрасить в цвет темы нельзя: на этой машине её перерисовывает
@@ -112,11 +112,11 @@
                         Margin="14,0,0,0" Background="Transparent"
                         MouseLeftButtonDown="OnTitleBarDown">
                 <Button x:Name="TrafficClose" Tag="Close" Click="OnTrafficClick"
-                        Foreground="#FF5F57" Style="{StaticResource TrafficButton}"/>
+                        Foreground="{DynamicResource Text}" Style="{StaticResource TrafficButton}"/>
                 <Button x:Name="TrafficMin" Tag="Min" Click="OnTrafficClick"
-                        Foreground="#FFBD2E" Style="{StaticResource TrafficButton}"/>
+                        Foreground="{DynamicResource Muted}" Style="{StaticResource TrafficButton}"/>
                 <Button x:Name="TrafficMax" Tag="Max" Click="OnTrafficClick"
-                        Foreground="#28C840" Style="{StaticResource TrafficButton}"
+                        Foreground="{DynamicResource Subtle}" Style="{StaticResource TrafficButton}"
                         Margin="0,0,0,0"/>
             </StackPanel>
 
@@ -236,6 +236,7 @@
             <Grid Grid.Row="0" Margin="24,2,20,0" Background="Transparent"
                   MouseLeftButtonDown="OnTitleBarDown">
                 <TextBlock x:Name="PageTitle" VerticalAlignment="Center"
+                           FontFamily="Segoe UI Variable Display, Segoe UI"
                            FontSize="20" FontWeight="SemiBold"/>
                 <Button x:Name="CloseButton" Content="{x:Static local:L.BtnDone}"
                         Click="OnCloseClick" Style="{StaticResource LinkButton}"
@@ -562,7 +563,7 @@
                                     <Border x:Name="MarkTextField" Style="{StaticResource Field}">
                                         <TextBox x:Name="MarkContentBox" TextChanged="OnMarkChanged"
                                                  LostFocus="OnMarkCommitted"
-                                                 FontFamily="Cascadia Mono, Consolas"/>
+                                                 FontFamily="Segoe UI Variable Text, Segoe UI"/>
                                     </Border>
 
                                     <StackPanel x:Name="MarkPicturePanel" Visibility="Collapsed">
@@ -751,18 +752,18 @@
                                                      Style="{StaticResource ThemeTile}">
                                             <StackPanel>
                                                 <Border Width="96" Height="56" CornerRadius="6"
-                                                        Background="#17171B" ClipToBounds="True">
+                                                        Background="#101013" ClipToBounds="True">
                                                     <Grid>
                                                         <Grid.ColumnDefinitions>
                                                             <ColumnDefinition Width="24"/>
                                                             <ColumnDefinition Width="*"/>
                                                         </Grid.ColumnDefinitions>
-                                                        <Border Background="#131316"/>
+                                                        <Border Background="#0A0A0C"/>
                                                         <StackPanel Grid.Column="1" Margin="5,6,5,0">
-                                                            <Border Height="7" CornerRadius="2" Background="#232327"/>
-                                                            <Border Height="7" CornerRadius="2" Background="#232327"
+                                                            <Border Height="7" CornerRadius="2" Background="#242428"/>
+                                                            <Border Height="7" CornerRadius="2" Background="#242428"
                                                                     Margin="0,4,0,0"/>
-                                                            <Border Height="7" CornerRadius="2" Background="#6B97FF"
+                                                            <Border Height="7" CornerRadius="2" Background="#F2F2F5"
                                                                     Width="20" HorizontalAlignment="Left"
                                                                     Margin="0,4,0,0"/>
                                                         </StackPanel>
@@ -781,18 +782,18 @@
                                                      Margin="10,0,0,0">
                                             <StackPanel>
                                                 <Border Width="96" Height="56" CornerRadius="6"
-                                                        Background="#F5F4F0" ClipToBounds="True">
+                                                        Background="#FFFFFF" ClipToBounds="True">
                                                     <Grid>
                                                         <Grid.ColumnDefinitions>
                                                             <ColumnDefinition Width="24"/>
                                                             <ColumnDefinition Width="*"/>
                                                         </Grid.ColumnDefinitions>
-                                                        <Border Background="#EDEBE5"/>
+                                                        <Border Background="#F0F0F2"/>
                                                         <StackPanel Grid.Column="1" Margin="5,6,5,0">
-                                                            <Border Height="7" CornerRadius="2" Background="#FFFFFF"/>
-                                                            <Border Height="7" CornerRadius="2" Background="#FFFFFF"
+                                                            <Border Height="7" CornerRadius="2" Background="#E4E4E8"/>
+                                                            <Border Height="7" CornerRadius="2" Background="#E4E4E8"
                                                                     Margin="0,4,0,0"/>
-                                                            <Border Height="7" CornerRadius="2" Background="#4C82FF"
+                                                            <Border Height="7" CornerRadius="2" Background="#141416"
                                                                     Width="20" HorizontalAlignment="Left"
                                                                     Margin="0,4,0,0"/>
                                                         </StackPanel>

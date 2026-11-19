@@ -1,8 +1,18 @@
-﻿# MacShot
+﻿<p align="center">
+  <img src="docs/logo.png" width="132" alt="MacShot icon">
+</p>
 
-Window screenshots in the macOS style for Windows.
+<h1 align="center">MacShot</h1>
 
-![Windows](https://img.shields.io/badge/Windows-10%20|%2011-blue) ![.NET](https://img.shields.io/badge/.NET-8-purple) ![License](https://img.shields.io/badge/license-MIT-green)
+<p align="center">
+  A screenshot tool for Windows that makes windows look like they were captured on macOS.
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Windows-10%20|%2011-blue" alt="Windows 10 and 11">
+  <img src="https://img.shields.io/badge/.NET-8-purple" alt=".NET 8">
+  <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT license">
+</p>
 
 ![MacShot settings](docs/screenshot.png)
 

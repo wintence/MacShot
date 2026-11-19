@@ -76,59 +76,63 @@ internal sealed class ThemePalette
     public Brush Of(string key) =>
         _brushes.TryGetValue(key, out var brush) ? brush : System.Windows.Media.Brushes.Black;
 
-    /// <summary>Исходная тёмная тема: та, что была в программе до тем.</summary>
+    /// <summary>
+    /// Тёмная тема: чёрный с едва заметной серой примесью.
+    ///
+    /// Палитра монохромная. Единственный «акцент» — белый: он же цвет
+    /// текста, поэтому интерфейс различает элементы весом шрифта, воздухом
+    /// и глубиной серого, а не цветными пятнами.
+    /// </summary>
     public static ThemePalette Dark { get; } = new(new (string, string)[]
     {
-        // Единственный цветной акцент — тёплый янтарь. Всё прочее —
-        // графит: страница различается весом шрифта и воздухом, а не
-        // рамками и подкрасками.
-        ("Accent", "#FFB454"),
-        ("AccentDim", "#3A2A14"),
-        ("AccentHover", "#FFC574"),
-        ("AccentPressed", "#E89C38"),
+        ("Accent", "#F2F2F5"),
+        ("AccentDim", "#242428"),
+        ("AccentHover", "#FFFFFF"),
+        ("AccentPressed", "#D2D2D8"),
         // Полупрозрачная заливка, которая проявляется под курсором.
         // Анимируется прозрачность, а не сам цвет Background: смена цвета
         // перерисовывает элемент процессором, а прозрачность ложится на GPU
         // и остаётся плавной даже при сотне кнопок на экране.
-        ("AccentVeil", "#12FFFFFF"),
+        ("AccentVeil", "#14FFFFFF"),
         // Свечение вокруг активного элемента.
-        ("Glow", "#40FFB454"),
-        ("BadgeText", "#FFB454"),
-        ("Bg", "#0F0F13"),
-        ("ButtonBg", "#1B1B21"),
-        ("ButtonBgHover", "#23232A"),
-        ("ButtonBgPressed", "#141419"),
-        ("ButtonBorder", "#24242B"),
-        ("ButtonBorderHover", "#33333C"),
-        ("Card", "#16161A"),
-        ("CardLine", "#24242B"),
-        ("ControlLine", "#2A2A31"),
-        ("DangerBg", "#2E1D1B"),
-        ("DangerBorder", "#3E2623"),
-        ("DangerText", "#E4685C"),
-        ("Input", "#1A1A20"),
+        ("Glow", "#33FFFFFF"),
+        ("BadgeText", "#E8E8EC"),
+        ("Bg", "#0C0C0E"),
+        ("ButtonBg", "#17171A"),
+        ("ButtonBgHover", "#1F1F23"),
+        ("ButtonBgPressed", "#121215"),
+        ("ButtonBorder", "#232327"),
+        ("ButtonBorderHover", "#333338"),
+        ("Card", "#141417"),
+        ("CardLine", "#232327"),
+        ("ControlLine", "#2A2A2F"),
+        ("DangerBg", "#2A1A19"),
+        ("DangerBorder", "#3D2624"),
+        ("DangerText", "#E0766E"),
+        ("Input", "#19191C"),
         ("MockLine", "#FFFFFF"),
-        ("MockTitle", "#4A4A59"),
-        ("MockWindow", "#3A3A46"),
-        ("Muted", "#96938C"),
-        // Тёмный текст на янтаре: белый на этом фоне выцветает.
-        ("OnAccent", "#201708"),
-        ("RowBg", "#17171C"),
-        ("RowSelected", "#1D1D24"),
+        ("MockTitle", "#4A4A52"),
+        ("MockWindow", "#38383F"),
+        // Описание настройки намеренно темнее её названия: заголовок
+        // держит структуру, пояснение уходит на второй план.
+        ("Muted", "#9A9AA3"),
+        // Тёмный текст на белом акценте.
+        ("OnAccent", "#0C0C0E"),
+        ("RowBg", "#161619"),
+        ("RowSelected", "#1D1D21"),
         ("ScrollThumbBg", "#3A3A41"),
-        // Боковая панель настроек: чуть светлее фона окна, чтобы колонка
-        // отделялась без рамки, и темнее карточек, чтобы карточки читались
-        // на ней, а не наоборот.
-        ("SidebarBg", "#0F0F13"),
-        ("SidebarLine", "#1C1C22"),
+        // Боковая панель настроек: чуть темнее страницы, чтобы колонка
+        // отделялась без рамки.
+        ("SidebarBg", "#0A0A0C"),
+        ("SidebarLine", "#1C1C20"),
         // Вуаль под курсором в списке разделов. Прозрачность вместо цвета:
         // подсветка ложится на любой фон и не перерисовывает строку.
         ("NavHover", "#12FFFFFF"),
-        ("SearchBg", "#1A1A20"),
+        ("SearchBg", "#19191C"),
         // Дорожка выключенного переключателя и его бегунок.
         ("ToggleOff", "#33333A"),
-        ("ToggleKnob", "#EDEBE5"),
-        ("SliderKnob", "#D9D6CE"),
+        ("ToggleKnob", "#F2F2F4"),
+        ("SliderKnob", "#E6E6EA"),
         // Квадраты выбора позиции лежат поверх фона кадра, а не поверх темы,
         // поэтому берут не цвета темы, а собственную двойную рамку: тёмную
         // снаружи и светлую внутри. Она одинакова в обеих темах — иначе
@@ -136,65 +140,65 @@ internal sealed class ThemePalette
         ("SpotFill", "#B01A1A20"),
         ("SpotLine", "#B3FFFFFF"),
         ("SpotHalo", "#8C000000"),
-        ("Subtle", "#6E6D69"),
-        ("ToolTipBg", "#1F1F24"),
-        ("ToolTipFg", "#ECEAE4"),
-        ("Surface", "#16161A"),
-        ("Text", "#ECEAE4"),
-        ("TrackBg", "#26262C"),
+        ("Subtle", "#6E6E76"),
+        ("ToolTipBg", "#1E1E22"),
+        ("ToolTipFg", "#F2F2F4"),
+        ("Surface", "#141417"),
+        ("Text", "#F5F5F7"),
+        ("TrackBg", "#26262B"),
     });
 
     /// <summary>
-    /// Светлая тема.
+    /// Светлая тема: белая страница и чёрный текст.
     ///
-    /// Акцент здесь темнее, чем в тёмной: на белом фоне тот же янтарь
-    /// выглядит бледнее, а мелкий текст поверх него читается плохо.
+    /// Акцент здесь тоже чёрный — пара к тёмной теме, где акцент белый.
+    /// Так переключение темы меняет только полярность, а не настроение.
     /// </summary>
     public static ThemePalette Light { get; } = new(new (string, string)[]
     {
-        ("Accent", "#C07A1E"),
-        ("AccentDim", "#F6E9D2"),
-        ("AccentHover", "#A8680F"),
-        ("AccentPressed", "#8F5711"),
+        ("Accent", "#141416"),
+        ("AccentDim", "#EFEFF2"),
+        ("AccentHover", "#2A2A2E"),
+        ("AccentPressed", "#000000"),
         ("AccentVeil", "#0C000000"),
-        ("Glow", "#40C07A1E"),
-        ("BadgeText", "#B26A1B"),
-        ("Bg", "#F3F1EB"),
+        ("Glow", "#20000000"),
+        ("BadgeText", "#2A2A2E"),
+        ("Bg", "#F7F7F8"),
         ("ButtonBg", "#FFFFFF"),
-        ("ButtonBgHover", "#F1EDE4"),
-        ("ButtonBgPressed", "#E7E2D6"),
-        ("ButtonBorder", "#E4E0D6"),
-        ("ButtonBorderHover", "#D6D1C4"),
-        ("Card", "#FBFAF6"),
-        ("CardLine", "#E6E2D8"),
-        ("ControlLine", "#DDD8CC"),
-        ("DangerBg", "#FBEBE7"),
-        ("DangerBorder", "#F0CFC6"),
-        ("DangerText", "#C0402F"),
+        ("ButtonBgHover", "#F0F0F2"),
+        ("ButtonBgPressed", "#E6E6EA"),
+        ("ButtonBorder", "#E4E4E8"),
+        ("ButtonBorderHover", "#D2D2D8"),
+        ("Card", "#FFFFFF"),
+        ("CardLine", "#ECECEF"),
+        ("ControlLine", "#DDDDE2"),
+        ("DangerBg", "#FBEBEA"),
+        ("DangerBorder", "#F2D2CF"),
+        ("DangerText", "#B23A2C"),
         ("Input", "#FFFFFF"),
-        ("MockLine", "#39404D"),
-        ("MockTitle", "#E7EAF0"),
+        ("MockLine", "#1A1A1D"),
+        ("MockTitle", "#E7E7EC"),
         ("MockWindow", "#FFFFFF"),
-        ("Muted", "#77746B"),
-        ("OnAccent", "#2A1602"),
-        ("RowBg", "#F7F5EF"),
-        ("RowSelected", "#EFECE3"),
-        ("ScrollThumbBg", "#D0C9BA"),
-        ("SidebarBg", "#F3F1EB"),
-        ("SidebarLine", "#E4E0D6"),
+        ("Muted", "#6E6E76"),
+        ("OnAccent", "#FFFFFF"),
+        ("RowBg", "#FBFBFC"),
+        ("RowSelected", "#F1F1F4"),
+        ("ScrollThumbBg", "#CFCFD6"),
+        ("SidebarBg", "#F2F2F4"),
+        ("SidebarLine", "#E4E4E8"),
         ("NavHover", "#0D000000"),
-        ("SearchBg", "#E9E6DE"),
-        ("ToggleOff", "#D5CFC2"),
+        ("SearchBg", "#EFEFF2"),
+        ("ToggleOff", "#C2C2CA"),
         ("ToggleKnob", "#FFFFFF"),
-        ("SliderKnob", "#A9A393"),
+        ("SliderKnob", "#6E6E76"),
         ("SpotFill", "#991C1F26"),
         ("SpotLine", "#B3FFFFFF"),
         ("SpotHalo", "#8C000000"),
-        ("Subtle", "#9A968C"),
-        ("ToolTipBg", "#2A2823"),
-        ("ToolTipFg", "#F3F1EB"),
-        ("Surface", "#FBFAF6"),
-        ("Text", "#23211D"),
-        ("TrackBg", "#E4E0D6"),
+        ("Subtle", "#8A8A92"),
+        ("ToolTipBg", "#1C1C1F"),
+        ("ToolTipFg", "#F7F7F8"),
+        ("Surface", "#FFFFFF"),
+        ("Text", "#111114"),
+        ("TrackBg", "#E4E4E8"),
     });
 }

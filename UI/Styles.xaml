@@ -30,7 +30,7 @@
          а сеттер неявного стиля перебил бы наследование и покрасил всё
          в один цвет. Базовый цвет задаёт окно. -->
     <Style TargetType="TextBlock">
-        <Setter Property="FontFamily" Value="Cascadia Mono, Consolas"/>
+        <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI"/>
         <Setter Property="FontSize" Value="13"/>
         <Setter Property="TextOptions.TextFormattingMode" Value="Ideal"/>
     </Style>
@@ -356,7 +356,7 @@
         <Setter Property="SelectionBrush" Value="{DynamicResource Accent}"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Background" Value="Transparent"/>
-        <Setter Property="FontFamily" Value="Cascadia Mono, Consolas"/>
+        <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI"/>
         <Setter Property="FontSize" Value="13"/>
         <Setter Property="Template">
             <Setter.Value>
@@ -390,7 +390,7 @@
                         <Grid.RenderTransform>
                             <ScaleTransform x:Name="S" ScaleX="1" ScaleY="1"/>
                         </Grid.RenderTransform>
-                        <Border Width="4" Height="14" CornerRadius="2"
+                        <Border Width="12" Height="12" CornerRadius="6"
                                 Background="{DynamicResource SliderKnob}"
                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Grid>
@@ -402,7 +402,11 @@
                                     <Storyboard>
                                         <DoubleAnimation Storyboard.TargetName="S"
                                                          Storyboard.TargetProperty="ScaleX"
-                                                         To="1.5" Duration="0:0:0.14"
+                                                         To="1.15" Duration="0:0:0.14"
+                                                         EasingFunction="{StaticResource EaseOut}"/>
+                                        <DoubleAnimation Storyboard.TargetName="S"
+                                                         Storyboard.TargetProperty="ScaleY"
+                                                         To="1.15" Duration="0:0:0.14"
                                                          EasingFunction="{StaticResource EaseOut}"/>
                                     </Storyboard>
                                 </BeginStoryboard>
@@ -506,6 +510,7 @@
         <Setter Property="Foreground" Value="{DynamicResource Text}"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="FontSize" Value="13"/>
+        <Setter Property="FontWeight" Value="Medium"/>
         <Setter Property="HorizontalAlignment" Value="Stretch"/>
         <Setter Property="Template">
             <Setter.Value>
@@ -539,6 +544,12 @@
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="Track" Property="Background"
                                     Value="{DynamicResource Accent}"/>
+                            <!-- Бегунок берёт цвет текста на акценте: в тёмной
+                                 теме он тёмный на белой дорожке, в светлой —
+                                 белый на чёрной. Один бегунок на оба состояния
+                                 был бы невидим на активной дорожке. -->
+                            <Setter TargetName="Knob" Property="Background"
+                                    Value="{DynamicResource OnAccent}"/>
                             <Trigger.EnterActions>
                                 <BeginStoryboard>
                                     <Storyboard>
@@ -581,6 +592,8 @@
     <Style TargetType="RadioButton">
         <Setter Property="Foreground" Value="{DynamicResource Text}"/>
         <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="FontWeight" Value="Medium"/>
         <Setter Property="HorizontalAlignment" Value="Stretch"/>
         <Setter Property="Template">
             <Setter.Value>
@@ -720,18 +733,24 @@
     </Style>
 
     <Style x:Key="CardTitle" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="15"/>
+        <Setter Property="FontFamily" Value="Segoe UI Variable Display, Segoe UI"/>
+        <Setter Property="FontSize" Value="16"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Margin" Value="16,14,16,8"/>
     </Style>
 
+    <!-- Название настройки: чуть тяжелее описания под ним. Полужирный здесь
+         не нужен — плотности Medium достаточно, чтобы строка читалась как
+         заголовок, но не спорила с заголовком карточки. -->
     <Style x:Key="RowLabel" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="12.5"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="FontWeight" Value="Medium"/>
         <Setter Property="Foreground" Value="{DynamicResource Text}"/>
     </Style>
 
+    <!-- Описание: мельче и приглушённее названия — второй план. -->
     <Style x:Key="Hint" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="11.5"/>
+        <Setter Property="FontSize" Value="12"/>
         <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
         <Setter Property="TextWrapping" Value="Wrap"/>
     </Style>
@@ -874,7 +893,7 @@
         <Setter Property="Foreground" Value="{DynamicResource Text}"/>
         <Setter Property="CaretBrush" Value="{DynamicResource Text}"/>
         <Setter Property="SelectionBrush" Value="{DynamicResource Accent}"/>
-        <Setter Property="FontFamily" Value="Cascadia Mono, Consolas"/>
+        <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI"/>
         <Setter Property="FontSize" Value="12.5"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
         <Setter Property="Template">

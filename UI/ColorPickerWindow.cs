@@ -73,7 +73,7 @@ internal sealed class ColorPickerWindow : Window
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         Background = _bg;
         Foreground = _text;
-        FontFamily = new FontFamily("Cascadia Mono, Consolas");
+        FontFamily = new FontFamily("Segoe UI Variable Text, Segoe UI");
         ShowInTaskbar = false;
 
         // Свой заголовок вместо системного: иначе у тёмного окна остаётся
